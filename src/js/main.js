@@ -25,12 +25,16 @@
   window.rewards = {
     merit: 1,
     demerit: 1,
-  }
+  };
+  window.mouse = mouse;
 
   const glUtils = require('./glUtils');
+  const focusUtils = require('./window.focus.util');
   const artist = require('./artist');
   let utils = require('utils');
   let TweenMax = require('gsap');
+  const fetch = window.fetch || require('whatwg-fetch').fetch;
+  const ROOT = location.origin.replace('8080','3210');
 
 
   init();
@@ -71,12 +75,14 @@
     window.addEventListener( 'mousemove', onMouseMove, false );
 
     window.addEventListener('keydown', function(event){
-      console.log('test', event);
-      if (event.keyCode === 38) {
-        increaseMerit('merit')();
-      } else if (event.keyCode === 40) {
-        decreaseMerit('merit')();
-      } else if (event.keyCode === 80) {
+      console.log('keypressed', event.keyCode);
+
+      if (event.keyCode === 38) { //UP ARROW
+        saveImage();
+        increaseMerit();
+      } else if (event.keyCode === 40) { //DOWN ARROW
+        decreaseMerit();
+      } else if (event.keyCode === 80) { //"P" KEY
         window.rewards.merit = 0;
         panicButton();
       }
@@ -86,39 +92,66 @@
       TweenMax.to('#messages', 0.5, {bottom: '-600px'})
     });
   }
+
+  function checkStatus(response) {
+    if (response.status >= 200 && response.status < 300) {
+      return response
+    } else {
+      let error = new Error(response.statusText)
+      error.response = response
+      throw error
+    }
+  }
+
+  function parseJSON(response) {
+    return response.json()
+  }
+
+  function saveImage() {
+    var imgData = canvas.toDataURL();
+    console.log('test',imgData.length);
+    fetch(ROOT+'/goodpainting', {
+        method: 'POST',
+        body: imgData
+      })
+      .then(checkStatus)
+      .then(parseJSON)
+      .then(function (e,d) {
+        console.log(e,d);
+      })
+      .catch(function (e) {
+        console.error('Error:',e);
+      });
+  }
   function panicButton () {
     window.dispatchEvent(new Event('panic'));
   }
-  function increaseMerit (key) {
-    return function () {
-      if (rewards[key] < 0) rewards[key] = 0;
-      rewards[key]+=10;
-      window.dispatchEvent(new Event('learn'));
-    }
+  function increaseMerit () {
+    if (rewards.merit < 0) rewards.merit = 0;
+    rewards.merit+=10;
+    window.dispatchEvent(new Event('learn'));
   }
   function decreaseMerit (key) {
-    return function () {
-      if ( rewards[key] > 0 ) {
-        rewards[key]=0;
-      } else {
-        rewards[key]-=5;
-      }
-      window.dispatchEvent(new Event('learn'));
+    if ( rewards.merit > 0 ) {
+      rewards.merit=0;
+    } else {
+      rewards.merit-=5;
     }
+    window.dispatchEvent(new Event('learn'));
   }
   function onMouseMove (event) {
     mouse = { x: event.pageX, y: event.pageY };
   }
 
   function getParameterByName(name, url) {
-      if (!url) url = window.location.href;
-      url = url.toLowerCase(); // This is just to avoid case sensitiveness
-      name = name.replace(/[\[\]]/g, "\\$&").toLowerCase();// This is just to avoid case sensitiveness for query parameter name
-      var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-          results = regex.exec(url);
-      if (!results) return null;
-      if (!results[2]) return '';
-      return decodeURIComponent(results[2].replace(/\+/g, " "));
+    if (!url) url = window.location.href;
+    url = url.toLowerCase(); // This is just to avoid case sensitiveness
+    name = name.replace(/[\[\]]/g, "\\$&").toLowerCase();// This is just to avoid case sensitiveness for query parameter name
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
   }
 
 
@@ -190,6 +223,7 @@
   }
 
   function useUniforms (uniforms) {
+    if (!uniforms) return;
     uniforms.forEach(function (obj) {
       gl.uniform1f( gl.getUniformLocation( currentProgram, obj.name ), obj.val );
     })
@@ -234,7 +268,19 @@
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
     gl.useProgram( currentProgram );
 
-    useUniforms(learningUniforms);
+    if (typeof learningUniforms !== 'undefined') {
+      useUniforms(learningUniforms);
+    }
+
+    var loc = gl.getUniformLocation(currentProgram, "mat");
+    var mat = [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+    ];
+    mat[5] = canvas.height/canvas.width;
+    gl.uniformMatrix4fv(loc, false, mat);
 
     gl.uniform1f( gl.getUniformLocation( currentProgram, 'time' ), parameters.time  );
     gl.uniform2f( gl.getUniformLocation( currentProgram, 'resolution' ), parameters.screenWidth, parameters.screenHeight );

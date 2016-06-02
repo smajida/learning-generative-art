@@ -32,6 +32,9 @@ vec3 raymarch(vec3 ro, vec3 rd)
 vec4 getSpace() {
   vec2 p= (gl_FragCoord.xy - resolution*0.5) / resolution.y;
   vec3 ro= roty(vec3(3.), time*0.2 + mouse.x);
+  vec3 uu= normalize(cross(ro, vec3(1.0, .0, 0.0)));
+  vec3 vv= normalize(cross(uu, ro));
+  vec3 rd= normalize(p.x*uu + p.y*vv - ro*0.5 );
   return vec4( log(raymarch(ro,rd) +1.0)*0.5, 1.0 );
 }
 

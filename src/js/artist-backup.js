@@ -1,50 +1,29 @@
 ;(function (window, document) {
 
-let timePageLoad = Date.now();
-let lastInteraction = {x: 0, y: 0};
-let totalInteractions = 0;
-let timeSinceLastInteraction = timePageLoad;
-window.learningUniforms = generateUniforms();
-
 const fetch = window.fetch || require('whatwg-fetch').fetch;
+//const Promise = Promise || require('es6-promise');
+
+var ValidationWorker = require("worker!./validation-worker");
+var validationWorker = new ValidationWorker();
+
 const ROOT = location.origin.replace('8080','3210');
-const num_inputs = getBrainInputs().length; // 1 time in session/page, 2 mouse coords, 2 page scroll, 1 clicks
-const num_actions = getActions().length; // 5 possible angles agent can turn
-const temporal_window = 0.99; // amount of temporal memory. 0 = agent lives in-the-moment :)
-const network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
-const AUTO_PAINT_CYCLES = 4;
-const PAINT_TIME = 400;
 
+console.log(fetch, Promise);
 
-let ValidationWorker = require("worker!./validation-worker");
-let validationWorker = new ValidationWorker();
+window.learningUniforms = generateUniforms();
 let deepqlearn = require('deepqlearn');
 let utils = require('utils');
 let TweenMax = require('gsap');
+
+const num_inputs = window.learningUniforms.length; // 9 eyes, each sees 3 numbers (wall, green, red thing proximity)
+const num_actions = getActions().length; // 5 possible angles agent can turn
+const temporal_window = 1; // amount of temporal memory. 0 = agent lives in-the-moment :)
+const network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
+const AUTO_PAINT_CYCLES = 4;
+
 let learnToPaintCycles = AUTO_PAINT_CYCLES;
 
-
-window.addEventListener('click', function () {
-  lastInteraction.x = mouse.x;
-  lastInteraction.x = mouse.y;
-  totalInteractions++;
-  timeSinceLastInteraction = Date.now()-timeSinceLastInteraction;
-}, false);
-
-window.addEventListener('learn', function () {
-  console.log('learn!');
-  learnToPaint();
-}, false);
-
-window.addEventListener('panic', function () {
-  console.log('panic!');
-
-  panicFunction()
-    .then(function () {
-      window.rewards.merit = 0;
-      learnToPaintLoop();
-    });
-}, false);
+const PAINT_TIME = 400;
 
 
 // the value function network computes a value of taking any of the possible actions
@@ -54,9 +33,8 @@ window.addEventListener('panic', function () {
 var layer_defs = [];
 layer_defs.push({type:'input', out_sx:1, out_sy:1, out_depth:network_size});
 layer_defs.push({type:'fc', num_neurons: 50, activation:'relu'});
-layer_defs.push({type:'fc', num_neurons: 500, activation:'relu'});
-layer_defs.push({type:'fc', num_neurons: 100, activation:'relu'});
-layer_defs.push({type:'fc', num_neurons: num_actions, activation:'relu'});
+layer_defs.push({type:'fc', num_neurons: 50, activation:'relu'});
+layer_defs.push({type:'fc', num_neurons: 20, activation:'relu'});
 layer_defs.push({type:'regression', num_neurons:num_actions});
 
 // options for the Temporal Difference learner that trains the above net
@@ -79,7 +57,6 @@ var brain = new deepqlearn.Brain(num_inputs, num_actions, opt); // woohoo
 
 
 function generateUniforms () {
-  //TODO: Better names for unforms
   let limit = 10;
   let _uniforms = [];
   while ( limit-- ) {
@@ -109,8 +86,9 @@ function getActions () {
     return result;
   }, [function () {
     //no action
+    //noop
     return Promise.resolve();
-  }]);
+  }, panicFunction]);
 }
 
 function panicFunction () {
@@ -130,11 +108,21 @@ function panicFunction () {
   });
 }
 
+window.addEventListener('learn', function () {
+  console.log('learn!');
+  learnToPaint();
+}, false);
+
+window.addEventListener('panic', function () {
+  console.log('panic!');
+  panicFunction();
+}, false);
+
+
 function loadBrainFromJSON (data) {
   //console.log('Brain Loaded');
   brain.value_net.fromJSON( data ) //LOAD BRAIN;
 }
-
 function checkStatus(response) {
   if (response.status >= 200 && response.status < 300) {
     return response
@@ -147,18 +135,6 @@ function checkStatus(response) {
 
 function parseJSON(response) {
   return response.json()
-}
-
-function getBrainInputs () {
-  return [
-    Date.now()-timePageLoad,
-    window.scrollX,
-    window.scrollY,
-    mouse.x,
-    mouse.y,
-    lastInteraction.x,
-    lastInteraction.y
-  ];
 }
 
 function justPaint() {
@@ -196,21 +172,30 @@ function validateResult() {
   });
 }
 
-function caculateReward () {
-  // seconds on page * 1, interactions * 15, scroll dist total * 10, num pages * 20, clicks contact * 200
-  if ( window.isInVisibleState ) {
-    window.rewards.merit = Math.floor((Date.now()-timePageLoad)/1000) + (totalInteractions*15);
-  }
-  return window.rewards.merit;
-}
-function resetReward () {
-  timePageLoad = Date.now();
-  totalInteractions = 0;
-  window.rewards.merit = 0;
-}
-
 function learnToPaintLoop () {
-  requestAnimationFrame(learnToPaint);
+  validateResult()
+    .then(function (resultValidity) {
+      if ( resultValidity > 0.92 ) {
+        //Bad artist!
+        window.rewards.merit = 0;
+        console.log('Bad Painting!', resultValidity, window.rewards.merit);
+      } else if ( resultValidity > 0.19 && resultValidity < 0.5 ) {
+        window.rewards.merit += (10 - Math.floor( (resultValidity*10)+1 ));
+        console.log('Doing Better...', resultValidity, window.rewards.merit);
+      } else if ( resultValidity <= 0.19 ) {
+        if (window.rewards.merit <= 0) {
+          window.rewards.merit = (10 - Math.floor( (resultValidity*10)+1 ));
+        } else {
+          window.rewards.merit += (10 - Math.floor( (resultValidity*10)+1 ));
+        }
+        console.log('Good Painting!', resultValidity, window.rewards.merit);
+      }
+      requestAnimationFrame(learnToPaint);
+    })
+    .catch((e) => {
+      console.error(e);
+      requestAnimationFrame(learnToPaint);
+    });
 }
 function learnToPaint () {
   if ( utils.getUrlVars('learningmodeoff') ) {
@@ -240,7 +225,7 @@ function doPainting () {
   return getActions()[action]().then(function () {
 
     // here, apply the action on environment and observe some reward. Finally, communicate it:
-    var r = brain.backward( caculateReward() ); // <-- learning magic happens here
+    var r = brain.backward( window.rewards.merit ); // <-- learning magic happens here
 
     console.log('Action index: ', action);
 
