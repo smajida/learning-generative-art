@@ -32,23 +32,23 @@ vec4 stripes(vec2 _uv)
 {
     if (mod(_uv.y, 1.0) < 0.2)
     {
-        return vec4( 182./255., 62./255., 134./255., floor(learning0+0.1) );
+        return vec4( 182./255., 62./255., 134./255., pow(learning0+0., 5.) );
     }
     else if (mod(_uv.y, 1.0) < 0.4)
     {
-        return vec4( 100./255., 51./255., 141./255., floor(learning1+0.1) );
+        return vec4( 100./255., 51./255., 141./255., pow(learning1+0., 5.) );
     }
     else if (mod(_uv.y, 1.0) < 0.6)
     {
-        return vec4( 61./255., 59./255., 140./255., floor(learning2+0.1) );
+        return vec4( 61./255., 59./255., 140./255., pow(learning2+0., 5.) );
     }
     else if (mod(_uv.y, 1.0) < 0.8)
     {
-        return vec4( 236./255., 100./255., 93./255., floor(learning3+0.1) );
+        return vec4( 236./255., 100./255., 93./255., pow(learning3+0., 5.) );
     }
     else
     {
-        return vec4( 236./255., 75./255., 136./255., 1. );
+        return vec4( 81./255., 123./255., 245./255., 1. );
     }
 }
 float flatten (vec4 outcolor) {
@@ -61,8 +61,8 @@ void main( )
 
     float scrollMod = (1.-scrolly*learning3);
     float mtime = (seed*learning0)+(time*learning2);
-    float delayMouseXMod = (delayMouse.x-1.5)*learning4;
-    float delayMouseYMod = (delayMouse.y-1.5)*learning5;
+    float delayMouseXMod = (delayMouse.x)*learning4;
+    float delayMouseYMod = (delayMouse.y)*learning5;
 
     uv.y += sin(mtime+uv.x*sin(uv.x*(24.0*learning1)+mtime)*uv.y*sin(mtime)*(4.0*learning2))*0.5+scrollMod;
 
@@ -70,7 +70,7 @@ void main( )
     uv.x += sin(mtime+uv.y*5.0*delayMouseYMod);
     vec4 outcolor = vec4(stripes(uv))*mod(mtime+uv.y,1.0)*0.99;
     if ( flatten(outcolor) < 0.1) {
-      outcolor = outcolor+vec4(254./255., 217./255., 92./255., learning8);
+      outcolor = outcolor+vec4(235./255., 23./255., 103./255., learning8);
     }
     outcolor = outcolor-vec4(learning9,learning9,learning9,0.1);
     gl_FragColor = outcolor;
