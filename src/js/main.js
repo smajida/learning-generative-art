@@ -16,10 +16,11 @@
         y: 0
       },
       parameters = {
-        start_time  : Date.now(),
-        time        : 0,
+        start_time : Date.now(),
+        time : 0,
+        scrolly : 0,
         screenWidth : 0,
-        screenHeight: 0
+        screenHeight : 0
       };
 
   window.rewards = {
@@ -31,6 +32,7 @@
   const glUtils = require('./glUtils');
   const focusUtils = require('./window.focus.util');
   const artist = require('./artist');
+  const Promise = window.Promise || require('es6-promise');
   let utils = require('utils');
   let TweenMax = require('gsap');
   const fetch = window.fetch || require('whatwg-fetch').fetch;
@@ -43,7 +45,7 @@
     return document.querySelector(sel);
   }
   function $$ (sel) {
-    return document.querySelectorAll(sel);
+    return [].slice.call(document.querySelectorAll(sel));
   }
 
   function init() {
@@ -264,7 +266,8 @@
 
     if ( !currentProgram ) return;
 
-    parameters.time = ( Date.now() - parameters.start_time ) / 100000;
+    parameters.time = ( Date.now() - parameters.start_time ) / 10000;
+    parameters.scrolly = window.scrollY / parameters.screenHeight;
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
     gl.useProgram( currentProgram );
 
@@ -282,7 +285,8 @@
     mat[5] = canvas.height/canvas.width;
     gl.uniformMatrix4fv(loc, false, mat);
 
-    gl.uniform1f( gl.getUniformLocation( currentProgram, 'time' ), parameters.time  );
+    gl.uniform1f( gl.getUniformLocation( currentProgram, 'time' ), parameters.time );
+    gl.uniform1f( gl.getUniformLocation( currentProgram, 'scrolly' ), parameters.scrolly );
     gl.uniform2f( gl.getUniformLocation( currentProgram, 'resolution' ), parameters.screenWidth, parameters.screenHeight );
     gl.uniform2f( gl.getUniformLocation( currentProgram, 'mouse' ), mouse.x/parameters.screenWidth, (parameters.screenHeight-mouse.y)/parameters.screenHeight );
     gl.uniform2f( gl.getUniformLocation( currentProgram, 'delayMouse' ), delayMouse.x/parameters.screenWidth, (parameters.screenHeight-delayMouse.y)/parameters.screenHeight );

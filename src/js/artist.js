@@ -1,5 +1,7 @@
 ;(function (window, document) {
 
+const _ = require('lodash');
+
 let timePageLoad = Date.now();
 let lastInteraction = {x: 0, y: 0};
 let totalInteractions = 0;
@@ -13,7 +15,7 @@ const num_actions = getActions().length; // 5 possible angles agent can turn
 const temporal_window = 0.99; // amount of temporal memory. 0 = agent lives in-the-moment :)
 const network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
 const AUTO_PAINT_CYCLES = 4;
-const PAINT_TIME = 400;
+const PAINT_TIME = 4000;
 
 
 let ValidationWorker = require("worker!./validation-worker");
@@ -24,12 +26,32 @@ let TweenMax = require('gsap');
 let learnToPaintCycles = AUTO_PAINT_CYCLES;
 
 
+function $ (sel) {
+  return document.querySelector(sel);
+}
+function $$ (sel) {
+  return [].slice.call(document.querySelectorAll(sel));
+}
+
+
 window.addEventListener('click', function () {
   lastInteraction.x = mouse.x;
   lastInteraction.x = mouse.y;
   totalInteractions++;
   timeSinceLastInteraction = Date.now()-timeSinceLastInteraction;
 }, false);
+
+let interactTime = 0;
+let interactCounterHandle = _.debounce(function () {
+  interactTime+=0.1;
+}, 10);
+window.addEventListener('mousemove', interactCounterHandle, false);
+window.addEventListener('scroll', interactCounterHandle, false);
+$$('a, button').forEach(function (ele) {
+  ele.addEventListener('mouseover', interactCounterHandle, false);
+});
+
+
 
 window.addEventListener('learn', function () {
   console.log('learn!');
@@ -83,7 +105,7 @@ function generateUniforms () {
   let limit = 10;
   let _uniforms = [];
   while ( limit-- ) {
-    _uniforms.push( { name: 'learning'+limit, index: limit, val: Math.random() } );
+    _uniforms.push( { name: 'learning'+limit, index: limit, val: 0.5 } );
   }
   console.log(_uniforms);
   return _uniforms;
@@ -95,22 +117,47 @@ function actionFactory (degree) {
     var p = new Promise(function (resolve) {
       resolver = resolve;
     });
-    TweenMax.to(this, PAINT_TIME/1000, {val: this.val + (degree*Math.random()), onComplete: resolver});
+    TweenMax.to(this, PAINT_TIME/1000, {val: this.val + (degree), onComplete: resolver});
     return p;
   }
 }
-
+var DEGREE = 0.01;
 function getActions () {
   return window.learningUniforms.reduce(function (result, currentUniform, index) {
-    result.push( (actionFactory(-0.0001)).bind(currentUniform) );
-    result.push( (actionFactory(0.0001)).bind(currentUniform) );
-    result.push( (actionFactory(-0.2)).bind(currentUniform) );
-    result.push( (actionFactory(0.2)).bind(currentUniform) );
+    result.push( (actionFactory(-DEGREE)).bind(currentUniform) );
+    result.push( (actionFactory(DEGREE)).bind(currentUniform) );
     return result;
-  }, [function () {
+  }, [
+  function () {
+    console.log('scramble!');
+    return Promise.all(window.learningUniforms.map(function (currentUniform, index) {
+      var resolver;
+      var p = new Promise(function (resolve) {
+        resolver = resolve;
+      });
+      TweenMax.to(currentUniform, PAINT_TIME/1000, {val: currentUniform.val+((Math.random()-0.5)/100), delay: index/500, onComplete: resolver});
+      return p;
+    }));
+  },
+  function () {
+    if (DEGREE < 0.1) {
+      DEGREE * 10;
+    }
+    console.log('change degree', DEGREE);
+    return Promise.resolve();
+  },
+  function () {
+    if (DEGREE > 0.0000001) {
+      DEGREE / 10;
+    }
+    console.log('change degree', DEGREE);
+    return Promise.resolve();
+  },
+  function () {
     //no action
     return Promise.resolve();
-  }]);
+  }
+  ]);
 }
 
 function panicFunction () {
@@ -118,10 +165,11 @@ function panicFunction () {
   window.learningUniforms.forEach(function (currentUniform, index) {
     (function (degree) {
       TweenMax.to(this, PAINT_TIME/500, {val: degree});
-    }).bind(currentUniform)(Math.random());
+    }).bind(currentUniform)(currentUniform.val+((Math.random()-0.5)/100));
   });
 
   console.log('Crazy Reset!');
+  resetReward();
 
   return new Promise(function (resolve, reject) {
     setTimeout(function () {
@@ -158,7 +206,13 @@ function getBrainInputs () {
     mouse.y,
     lastInteraction.x,
     lastInteraction.y
-  ];
+  ].concat(getLearningUniformsInputs());
+}
+
+function getLearningUniformsInputs () {
+  return window.learningUniforms.map(function (uni) {
+    return uni.val;
+  })
 }
 
 function justPaint() {
@@ -196,15 +250,16 @@ function validateResult() {
   });
 }
 
-function caculateReward () {
+function calculateReward () {
   // seconds on page * 1, interactions * 15, scroll dist total * 10, num pages * 20, clicks contact * 200
   if ( window.isInVisibleState ) {
-    window.rewards.merit = Math.floor((Date.now()-timePageLoad)/1000) + (totalInteractions*15);
+    window.rewards.merit = Math.floor((Date.now()-timePageLoad)/(100*1000)) + Math.floor(interactTime) + (totalInteractions*15);
   }
   return window.rewards.merit;
 }
 function resetReward () {
   timePageLoad = Date.now();
+  interactTime = 0;
   totalInteractions = 0;
   window.rewards.merit = 0;
 }
@@ -212,11 +267,19 @@ function resetReward () {
 function learnToPaintLoop () {
   requestAnimationFrame(learnToPaint);
 }
+
+let LoadCounter = 10;
 function learnToPaint () {
   if ( utils.getUrlVars('learningmodeoff') ) {
     return;
   }
 
+  if (LoadCounter > 0) {
+    LoadCounter--;
+    doPainting();
+    return
+  }
+  LoadCounter = 10;
   fetch(ROOT+'/brain/brain.json')
     .then(checkStatus)
     .then(parseJSON)
@@ -230,20 +293,25 @@ function learnToPaint () {
     });
 }
 
+let SaveCounter = 10;
 function doPainting () {
 
-  var action = brain.forward(window.learningUniforms.map(function (uni) {
-    return uni.val;
-  }));
+  var action = brain.forward(getBrainInputs());
 
   // action is a number in [0, num_actions) telling index of the action the agent chooses
   return getActions()[action]().then(function () {
 
     // here, apply the action on environment and observe some reward. Finally, communicate it:
-    var r = brain.backward( caculateReward() ); // <-- learning magic happens here
+    var reward = calculateReward();
+    brain.backward( reward ); // <-- learning magic happens here
 
     console.log('Action index: ', action);
-
+    if (SaveCounter > 0) {
+      SaveCounter--;
+      requestAnimationFrame(learnToPaintLoop);
+      requestAnimationFrame(artistLearnedFlash);
+      return Promise.resolve();
+    }
     return fetch(ROOT+'/memory', {
         method: 'POST',
         headers: {

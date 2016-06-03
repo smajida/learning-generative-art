@@ -25,12 +25,13 @@
         };
 
     evt = evt || window.event;
-    if (evt.type in evtMap)
+    if (evt.type in evtMap) {
       document.body.className = evtMap[evt.type];
-    else
+      window.isInVisibleState = (evtMap[evt.type] == 'hidden' ? false : true);
+    } else {
       document.body.className = this[hidden] ? 'hidden' : 'visible';
-
-    window.isInVisibleState = (this[hidden] ? false : true);
+      window.isInVisibleState = (this[hidden] == 'hidden' ? false : true);
+    }
   }
 
   // set the initial state (but only if browser supports the Page Visibility API)
