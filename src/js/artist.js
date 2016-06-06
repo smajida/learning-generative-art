@@ -15,7 +15,8 @@ const num_actions = getActions().length; // 5 possible angles agent can turn
 const temporal_window = 0.99; // amount of temporal memory. 0 = agent lives in-the-moment :)
 const network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
 const AUTO_PAINT_CYCLES = 4;
-const PAINT_TIME = 4000;
+const PAINT_TIME = 1500;
+const ML_STATE_COUNTER = 1;
 
 
 let ValidationWorker = require("worker!./validation-worker");
@@ -128,17 +129,17 @@ function getActions () {
     result.push( (actionFactory(DEGREE)).bind(currentUniform) );
     return result;
   }, [
-  function () {
-    console.log('scramble!');
-    return Promise.all(window.learningUniforms.map(function (currentUniform, index) {
-      var resolver;
-      var p = new Promise(function (resolve) {
-        resolver = resolve;
-      });
-      TweenMax.to(currentUniform, PAINT_TIME/1000, {val: currentUniform.val+((Math.random()-0.5)/100), delay: index/500, onComplete: resolver});
-      return p;
-    }));
-  },
+  // function () {
+  //   console.log('scramble!');
+  //   return Promise.all(window.learningUniforms.map(function (currentUniform, index) {
+  //     var resolver;
+  //     var p = new Promise(function (resolve) {
+  //       resolver = resolve;
+  //     });
+  //     TweenMax.to(currentUniform, PAINT_TIME/1000, {val: currentUniform.val+((Math.random()-0.5)/100), delay: index/500, onComplete: resolver});
+  //     return p;
+  //   }));
+  // },
   function () {
     if (DEGREE < 0.1) {
       DEGREE * 10;
@@ -268,7 +269,7 @@ function learnToPaintLoop () {
   requestAnimationFrame(learnToPaint);
 }
 
-let LoadCounter = 10;
+let LoadCounter = ML_STATE_COUNTER;
 function learnToPaint () {
   if ( utils.getUrlVars('learningmodeoff') ) {
     return;
@@ -279,7 +280,7 @@ function learnToPaint () {
     doPainting();
     return
   }
-  LoadCounter = 10;
+  LoadCounter = ML_STATE_COUNTER;
   fetch(ROOT+'/brain/brain.json')
     .then(checkStatus)
     .then(parseJSON)
@@ -293,7 +294,7 @@ function learnToPaint () {
     });
 }
 
-let SaveCounter = 10;
+let SaveCounter = ML_STATE_COUNTER;
 function doPainting () {
 
   var action = brain.forward(getBrainInputs());
@@ -312,6 +313,7 @@ function doPainting () {
       requestAnimationFrame(artistLearnedFlash);
       return Promise.resolve();
     }
+    SaveCounter = ML_STATE_COUNTER;
     return fetch(ROOT+'/memory', {
         method: 'POST',
         headers: {
@@ -329,6 +331,8 @@ function doPainting () {
       })
       .catch(function (e) {
         console.error("Error", e);
+        requestAnimationFrame(learnToPaintLoop);
+        requestAnimationFrame(artistLearnedFlash);
       });
   });
 
