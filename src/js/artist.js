@@ -14,17 +14,40 @@ const num_inputs = getBrainInputs().length; // 1 time in session/page, 2 mouse c
 const num_actions = getActions().length; // 5 possible angles agent can turn
 const temporal_window = 0.99; // amount of temporal memory. 0 = agent lives in-the-moment :)
 const network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
+
 const AUTO_PAINT_CYCLES = 4;
-const PAINT_TIME = 1500;
+const PAINT_TIME = 100;
 const ML_STATE_COUNTER = 1;
 
 
 let ValidationWorker = require("worker!./validation-worker");
 let validationWorker = new ValidationWorker();
-let deepqlearn = require('deepqlearn');
 let utils = require('utils');
 let TweenMax = require('gsap');
 let learnToPaintCycles = AUTO_PAINT_CYCLES;
+let interactTime = 0;
+
+let ArtistBrain = require("worker!./artist-brain");
+let ArtistBrainWorker = new ArtistBrain();
+ArtistBrainWorker.onmessage = function(event) {
+  console.log('Message in Main', event);
+  if (ArtistBrainWorker[event.data[0]]) {
+    ArtistBrainWorker[event.data[0]].resolve(event.data);
+    ArtistBrainWorker[event.data[0]] = null;
+  }
+};
+function messageArtistBrain (messageType, data) {
+  return new Promise(function (resolve, reject) {
+    if (ArtistBrainWorker[messageType] && ArtistBrainWorker[messageType].reject) {
+      ArtistBrainWorker[messageType].reject(messageType);
+    }
+    ArtistBrainWorker[messageType] = {
+      resolve: resolve,
+      reject: reject
+    };
+    ArtistBrainWorker.postMessage( [messageType].concat(data) );
+  });
+}
 
 
 function $ (sel) {
@@ -42,23 +65,20 @@ window.addEventListener('click', function () {
   timeSinceLastInteraction = Date.now()-timeSinceLastInteraction;
 }, false);
 
-let interactTime = 0;
-let interactCounterHandle = _.debounce(function () {
+function incrementInteractTime () {
   interactTime+=0.1;
-}, 10);
+}
+let interactCounterHandle = _.debounce(incrementInteractTime, 10);
 window.addEventListener('mousemove', interactCounterHandle, false);
 window.addEventListener('scroll', interactCounterHandle, false);
 $$('a, button').forEach(function (ele) {
   ele.addEventListener('mouseover', interactCounterHandle, false);
 });
 
-
-
 window.addEventListener('learn', function () {
   console.log('learn!');
   learnToPaint();
 }, false);
-
 window.addEventListener('panic', function () {
   console.log('panic!');
 
@@ -69,36 +89,6 @@ window.addEventListener('panic', function () {
     });
 }, false);
 
-
-// the value function network computes a value of taking any of the possible actions
-// given an input state. Here we specify one explicitly the hard way
-// but user could also equivalently instead use opt.hidden_layer_sizes = [20,20]
-// to just insert simple relu hidden layers.
-var layer_defs = [];
-layer_defs.push({type:'input', out_sx:1, out_sy:1, out_depth:network_size});
-layer_defs.push({type:'fc', num_neurons: 50, activation:'relu'});
-layer_defs.push({type:'fc', num_neurons: 100, activation:'relu'});
-layer_defs.push({type:'fc', num_neurons: 50, activation:'relu'});
-layer_defs.push({type:'fc', num_neurons: num_actions, activation:'relu'});
-layer_defs.push({type:'regression', num_neurons:num_actions});
-
-// options for the Temporal Difference learner that trains the above net
-// by backpropping the temporal difference learning rule.
-var tdtrainer_options = {learning_rate:0.001, momentum:0.0, batch_size:64, l2_decay:0.01};
-
-var opt = {};
-opt.temporal_window = temporal_window;
-opt.experience_size = 30000;
-opt.start_learn_threshold = 10;
-opt.gamma = 0.7;
-opt.learning_steps_total = 200000;
-opt.learning_steps_burnin = 30;
-opt.epsilon_min = 0.05;
-opt.epsilon_test_time = 0.05;
-opt.layer_defs = layer_defs;
-opt.tdtrainer_options = tdtrainer_options;
-
-var brain = new deepqlearn.Brain(num_inputs, num_actions, opt); // woohoo
 
 
 function generateUniforms () {
@@ -181,21 +171,20 @@ function panicFunction () {
 
 function loadBrainFromJSON (data) {
   //console.log('Brain Loaded');
-  brain.value_net.fromJSON( data ) //LOAD BRAIN;
+  return messageArtistBrain('loadBrainFromJSON', [data])
 }
 
 function checkStatus(response) {
   if (response.status >= 200 && response.status < 300) {
-    return response
+    return response;
   } else {
-    let error = new Error(response.statusText)
-    error.response = response
-    throw error
+    let error = new Error(response.statusText);
+    error.response = response;
+    throw error;
   }
 }
-
 function parseJSON(response) {
-  return response.json()
+  return response.json();
 }
 
 function getBrainInputs () {
@@ -206,10 +195,10 @@ function getBrainInputs () {
     mouse.x,
     mouse.y,
     lastInteraction.x,
-    lastInteraction.y
+    lastInteraction.y,
+    DEGREE,
   ].concat(getLearningUniformsInputs());
 }
-
 function getLearningUniformsInputs () {
   return window.learningUniforms.map(function (uni) {
     return uni.val;
@@ -217,9 +206,8 @@ function getLearningUniformsInputs () {
 }
 
 function justPaint() {
-  var action = brain.forward(window.learningUniforms.map(function (uni) {
-    return uni.val;
-  }));
+  var action = messageArtistBrain('forward', [getBrainInputs()]);
+
   getActions()[action]();
   setTimeout(function () {
     justPaint();
@@ -239,7 +227,6 @@ function validateResult() {
   if (!gl) return;
 
   return new Promise(function (resolve, reject) {
-
     validationWorker.onmessage = function(event) {
       //console.log(event);
       resolve(event.data[0]);
@@ -274,87 +261,80 @@ function learnToPaint () {
   if ( utils.getUrlVars('learningmodeoff') ) {
     return;
   }
-
   if (LoadCounter > 0) {
     LoadCounter--;
     doPainting();
-    return
+    return;
   }
   LoadCounter = ML_STATE_COUNTER;
-  fetch(ROOT+'/brain/brain.json')
-    .then(checkStatus)
-    .then(parseJSON)
-    .then(loadBrainFromJSON)
-    .then(function () {
-      doPainting();
-    })
-    .catch(function (e) {
-      console.error("Error", e);
-      doPainting();
-    });
+  fetchBrainJSON(function (err) {
+    if (err) console.error("Error", err);
+    doPainting();
+  });
 }
 
 let SaveCounter = ML_STATE_COUNTER;
 function doPainting () {
+  return messageArtistBrain('forward', [getBrainInputs()])
+    .then(function (messageData) {
+      console.log('fwd', messageData);
+      let action = messageData[1];
+      let actions = getActions();
+      // action is a number in [0, num_actions) telling index of the action the agent chooses
+      return actions[action]()
+        .then(function (action) {
+          var reward = calculateReward();
+          messageArtistBrain('backward', [reward]); // <-- learning magic happens here
 
-  var action = brain.forward(getBrainInputs());
-
-  // action is a number in [0, num_actions) telling index of the action the agent chooses
-  return getActions()[action]().then(function () {
-
-    // here, apply the action on environment and observe some reward. Finally, communicate it:
-    var reward = calculateReward();
-    brain.backward( reward ); // <-- learning magic happens here
-
-    console.log('Action index: ', action);
-    if (SaveCounter > 0) {
-      SaveCounter--;
-      requestAnimationFrame(learnToPaintLoop);
-      requestAnimationFrame(artistLearnedFlash);
-      return Promise.resolve();
-    }
-    SaveCounter = ML_STATE_COUNTER;
-    return fetch(ROOT+'/memory', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(brain.value_net.toJSON())
-      })
-      .then(checkStatus)
-      .then(parseJSON)
-      .then(loadBrainFromJSON)
-      .then(function () {
-        requestAnimationFrame(learnToPaintLoop);
-        requestAnimationFrame(artistLearnedFlash);
-      })
-      .catch(function (e) {
-        console.error("Error", e);
-        requestAnimationFrame(learnToPaintLoop);
-        requestAnimationFrame(artistLearnedFlash);
-      });
-  });
-
+          console.log('Action index: ', action);
+          if (SaveCounter > 0) {
+            SaveCounter--;
+            doPaintCallback();
+            return Promise.resolve();
+          }
+          SaveCounter = ML_STATE_COUNTER;
+          return messageArtistBrain('getJSONFromBrain').then(function (jsondata) {
+            return postToMemory(jsondata);
+          })
+        });
+    });
 }
 
+function postToMemory (value_net_json) {
+  return fetch(ROOT+'/memory', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: value_net_json
+    })
+    .then(checkStatus)
+    .then(parseJSON)
+    .then(loadBrainFromJSON)
+    .then(doPaintCallback)
+    .catch(doPaintCallback);
+}
+
+function fetchBrainJSON (callback) {
+  return fetch(ROOT+'/brain/brain.json')
+    .then(checkStatus)
+    .then(parseJSON)
+    .then(loadBrainFromJSON)
+    .then(callback)
+    .catch(callback);
+}
+
+function doPaintCallback (e) {
+  if (e) console.log(e);
+  requestAnimationFrame(learnToPaintLoop);
+  requestAnimationFrame(artistLearnedFlash);
+}
 
 function artistLearnedFlash () {
   TweenMax.to('#learned', 0.3, {scale: '1'});
   TweenMax.to('#learned', 0.7, {scale: '0.01', delay: 0.2});
 }
-
-fetch(ROOT+'/brain/brain.json')
-  .then(checkStatus)
-  .then(parseJSON)
-  .then(loadBrainFromJSON)
-  .then(function () {
-    getStarted();
-  })
-  .catch(function (err) {
-    console.log(err);
-    getStarted();
-  });
 
 function getStarted () {
   if ( utils.getUrlVars('learningmodeoff') ) {
@@ -364,4 +344,18 @@ function getStarted () {
   }
 }
 
+function INIT () {
+  messageArtistBrain('setup', [network_size, num_actions, temporal_window])
+    .then(function () {
+      fetchBrainJSON(function (err) {
+        if (err) console.log(err);
+        getStarted();
+      });
+    })
+    .catch(function (e) {
+      console.error(e);
+    });
+}
+
+INIT();
 })(window, document);

@@ -18,7 +18,9 @@ var deepqlearn = deepqlearn || { REVISION: 'ALPHA' };
   // A Brain object does all the magic.
   // over time it receives some inputs and some rewards
   // and its job is to set the outputs to maximize the expected reward
+  console.log('hi brain');
   var Brain = function(num_states, num_actions, opt) {
+    console.log('hi inside brain');
     var opt = opt || {};
     // in number of time steps, of temporal memory
     // the ACTUAL input to the net will be (x,a) temporal_window times, and followed by current x
@@ -266,9 +268,12 @@ var deepqlearn = deepqlearn || { REVISION: 'ALPHA' };
 
 (function(lib) {
   "use strict";
-  if (typeof module === "undefined" || typeof module.exports === "undefined") {
+  if ((typeof module === "undefined" || typeof module.exports === "undefined") && typeof window !== "undefined") {
     window.deepqlearn = lib; // in ordinary browser attach library to window
-  } else {
+  } else if (typeof module !== "undefined" || typeof module.exports !== "undefined") {
     module.exports = lib; // in nodejs
+  } else {
+    this.deepqlearn = lib;
+    return lib;
   }
 })(deepqlearn);
