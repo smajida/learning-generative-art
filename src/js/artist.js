@@ -170,8 +170,11 @@ function panicFunction () {
 }
 
 function loadBrainFromJSON (data) {
-  //console.log('Brain Loaded');
-  return messageArtistBrain('loadBrainFromJSON', [data])
+  console.log('Brain Loaded', data);
+  if (data.layers) {
+    return messageArtistBrain('loadBrainFromJSON', [data]);
+  }
+  return;
 }
 
 function checkStatus(response) {
@@ -284,7 +287,10 @@ function doPainting () {
       return actions[action]()
         .then(function (action) {
           var reward = calculateReward();
-          messageArtistBrain('backward', [reward]); // <-- learning magic happens here
+          messageArtistBrain('backward', [reward])  // <-- learning magic happens here
+            .catch(function (e) {
+              console.error('Error', e);
+            });
 
           console.log('Action index: ', action);
           if (SaveCounter > 0) {
