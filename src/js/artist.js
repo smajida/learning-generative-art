@@ -30,7 +30,7 @@ let interactTime = 0;
 let ArtistBrain = require("worker!./artist-brain");
 let ArtistBrainWorker = new ArtistBrain();
 ArtistBrainWorker.onmessage = function(event) {
-  console.log('Message in Main', event);
+  //console.log('Message in Main', event);
   if (ArtistBrainWorker[event.data[0]]) {
     ArtistBrainWorker[event.data[0]].resolve(event.data);
     ArtistBrainWorker[event.data[0]] = null;
@@ -270,8 +270,10 @@ function learnToPaint () {
     return;
   }
   LoadCounter = ML_STATE_COUNTER;
-  fetchBrainJSON(function (err) {
-    if (err) console.error("Error", err);
+  fetchBrainJSON(function (data) {
+    if (data && !data[1]) {
+      console.error("Error", data);
+    }
     doPainting();
   });
 }
@@ -285,7 +287,7 @@ function doPainting () {
       let actions = getActions();
       // action is a number in [0, num_actions) telling index of the action the agent chooses
       return actions[action]()
-        .then(function (action) {
+        .then(function () {
           var reward = calculateReward();
           messageArtistBrain('backward', [reward])  // <-- learning magic happens here
             .catch(function (e) {
@@ -299,9 +301,10 @@ function doPainting () {
             return Promise.resolve();
           }
           SaveCounter = ML_STATE_COUNTER;
-          return messageArtistBrain('getJSONFromBrain').then(function (jsondata) {
-            return postToMemory(jsondata);
-          })
+          return messageArtistBrain('getJSONFromBrain')
+            .then(function (data) {
+              return postToMemory(data[1]);
+            });
         });
     });
 }
@@ -351,10 +354,12 @@ function getStarted () {
 }
 
 function INIT () {
-  messageArtistBrain('setup', [network_size, num_actions, temporal_window])
+  messageArtistBrain('setup', [network_size, num_actions, num_inputs, temporal_window])
     .then(function () {
-      fetchBrainJSON(function (err) {
-        if (err) console.log(err);
+      fetchBrainJSON(function (data) {
+        if (data && !data[1]) {
+          console.error("Error", data);
+        }
         getStarted();
       });
     })

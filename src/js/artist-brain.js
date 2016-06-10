@@ -30,27 +30,26 @@ let actions = {
     return messageType;
   },
   forward: function (messageType, inputs) {
-    var action = brain.forward(inputs);
-    return action;
+    return brain.forward(inputs);
   },
-  learn: function (messageType, reward) {
-    brain.backward(reward); // <-- learning magic happens here
-    return messageType;
+  backward: function (messageType, reward) {
+    return brain.backward(reward); // <-- learning magic happens here
   },
   loadBrainFromJSON: function (messageType, jsondata) {
-    //console.log('Brain Loaded');
     brain.value_net.fromJSON(jsondata);
-    return messageType;
+    return true;
   },
   getJSONFromBrain: function (messageType, jsondata) {
-    return JSON.stringify(brain.value_net.toJSON());
+    let _brain_json = JSON.stringify(brain.value_net.toJSON());
+    console.log(_brain_json.length);
+    return _brain_json;
   }
 }
 
 onmessage = function(e) {
   let messageType = e.data[0];
   if ( actions[messageType] ) {
-    console.log('Message in worker', e.data, actions[messageType]);
+    //console.log('Message in worker', e.data, actions[messageType]);
     let response = actions[messageType](messageType, e.data[1], e.data[2], e.data[3], e.data[4]);
     postMessage([messageType, response]);
   }

@@ -16,6 +16,7 @@ const int sections = 36;
 const float travelDist = 650.;
 const float hPI = 3.141592653589793 / 2.;
 const float seed = 100.;
+const float timeEffectDampening = 100.;
 
 uniform float learning0;
 uniform float learning1;
@@ -32,19 +33,19 @@ vec4 stripes(vec2 _uv)
 {
     if (mod(_uv.x, 1.0) < 0.2)
     {
-        return vec4( 182./255., 62./255., 134./255., pow(learning0+0., 500.) );
+        return vec4( 182./255., 62./255., 134./255., 0. );
     }
     else if (mod(_uv.x, 1.0) < 0.4)
     {
-        return vec4( 100./255., 51./255., 141./255., pow(learning1+0., 500.) );
+        return vec4( 100./255., 51./255., 141./255., 0. );
     }
     else if (mod(_uv.x, 1.0) < 0.6)
     {
-        return vec4(  61./255., 59./255., 140./255., pow(learning2+0., 500.) );
+        return vec4(  61./255., 59./255., 140./255., 0. );
     }
     else if (mod(_uv.x, 1.0) < 0.8)
     {
-        return vec4( 236./255., 100./255., 93./255., pow(learning3+0., 500.) );
+        return vec4( 236./255., 100./255., 93./255., 0. );
     }
     else
     {
@@ -57,13 +58,24 @@ float flatten (vec4 outcolor) {
 
 void main( )
 {
+    float modifyScroll = learning0-0.5;
+    float modifyTimeEffect = (learning1-0.5) / timeEffectDampening;
+    // float learning2;
+    // float learning3;
+    // float learning4;
+    // float learning5;
+    // float learning6;
+    // float learning7;
+    // float learning8;
+    // float learning9;
+
     vec2 uv = (gl_FragCoord.xy / resolution.xy);
     vec2 uvb = uv-0.5;
 
-    float scrollMod = (1.-scrolly*learning3);
+    float scrollMod = (1.-scrolly*modifyScroll);
     float delayMouseXMod = (delayMouse.x-0.5)*learning4*2.;
     float delayMouseYMod = (delayMouse.y-0.5)*learning5*2.;
-    float mtime = (delayMouseYMod * delayMouseXMod * scrollMod * 5. * learning2);
+    float mtime = (delayMouseYMod * delayMouseXMod * scrollMod * modifyTimeEffect);
 
     uv.x += sin(mtime+uvb.x*sin(uvb.x*(6.0)+mtime)*uvb.x*sin(mtime)*(2.0))*0.5+scrollMod;
 

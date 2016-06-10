@@ -37,8 +37,8 @@ app.post('/memory', function (req, res) {
   fs.writeFile('brain/brain.json', bodyStr, (err) => {
     if (err) throw err;
     console.log('Brain Has Been Saved', bodyStr.length);
+    res.send(req.body);
   });
-  res.send(req.body);
 });
 app.post('/goodpainting', function (req, res) {
   console.log('Saved Pic:', req.body.length);
