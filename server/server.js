@@ -1,3 +1,4 @@
+'use strict';
 const express = require('express');
 const redis = require('redis');
 const bodyParser = require('body-parser');
@@ -32,12 +33,12 @@ app.get('/', function (req, res) {
   res.sendFile(`${PUBLIC}/index.html`);
 });
 app.post('/memory', function (req, res) {
-  //console.log(JSON.stringify(req.body));
-  fs.writeFile('brain/brain.json', JSON.stringify(req.body), (err) => {
+  let bodyStr = JSON.stringify(req.body, null, 1);
+  fs.writeFile('brain/brain.json', bodyStr, (err) => {
     if (err) throw err;
-    console.log('Brain Has Been Saved', JSON.stringify(req.body).length);
+    console.log('Brain Has Been Saved', bodyStr.length);
+    res.send(req.body);
   });
-  res.send(req.body);
 });
 app.post('/goodpainting', function (req, res) {
   console.log('Saved Pic:', req.body.length);
