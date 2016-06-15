@@ -59,7 +59,7 @@ vec3 stripes(vec2 _uv)
 
     if (mod(_uv.x, 1.0) < 0.25) {
         stripeout = vec3( 182./255., 62./255., 134./255. );
-    } else if (mod(_uv.x, 1.0) > 0.3) {
+    } else if (mod(_uv.x, 1.0) > 0.26) {
         stripeout = vec3( 1. );
     }
     stripeout = stripeout+vec3( (sin(_uv.y)+1.)/10. );
