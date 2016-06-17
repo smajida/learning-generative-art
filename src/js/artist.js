@@ -11,7 +11,7 @@ window.learningUniforms = generateUniforms();
 const ROOT = location.origin.replace('8080','3210');
 const num_inputs = getBrainInputs().length; // 1 time in session/page, 2 mouse coords, 2 page scroll, 1 clicks
 const num_actions = getActions().length; // 5 possible angles agent can turn
-const temporal_window = 4000; // amount of temporal memory. 0 = agent lives in-the-moment :)
+const temporal_window = 20; // amount of temporal memory. 0 = agent lives in-the-moment :)
 const network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
 
 const AUTO_PAINT_CYCLES = 4;
@@ -70,8 +70,10 @@ function incrementInteractTime () {
   interactTime+=0.1;
 }
 let interactCounterHandle = _.debounce(incrementInteractTime, 10);
+
 window.addEventListener('mousemove', interactCounterHandle, false);
 window.addEventListener('scroll', interactCounterHandle, false);
+
 $$('a, button').forEach(function (ele) {
   ele.addEventListener('mouseover', interactCounterHandle, false);
 });
@@ -80,15 +82,21 @@ window.addEventListener('learn', function () {
   console.log('learn!');
   learnToPaint();
 }, false);
+
 window.addEventListener('panic', function () {
   console.log('panic!');
 
   panicFunction()
     .then(function () {
-      window.rewards.merit = 0;
+      window.reward = 0;
       learnToPaintLoop();
     });
 }, false);
+
+window.addEventListener('blur', function () {
+  window.reward = Math.max(window.reward-100,0);
+}, false);
+
 
 
 
@@ -245,15 +253,16 @@ function validateResult() {
 function calculateReward () {
   // seconds on page * 1, interactions * 15, scroll dist total * 10, num pages * 20, clicks contact * 200
   if ( window.isInVisibleState ) {
-    window.rewards.merit = Math.floor((Date.now()-timePageLoad)/(100*1000)) + Math.floor(interactTime) + (totalInteractions*15);
+    window.reward = Math.floor((Date.now()-timePageLoad)/(100*1000)) + Math.floor(interactTime) + (totalInteractions*15);
+    console.log(Math.floor((Date.now()-timePageLoad)/(100*1000)), Math.floor(interactTime), (totalInteractions*15))
   }
-  return window.rewards.merit;
+  return window.reward;
 }
 function resetReward () {
   timePageLoad = Date.now();
   interactTime = 0;
   totalInteractions = 0;
-  window.rewards.merit = 0;
+  window.reward = 0;
 }
 
 function learnToPaintLoop () {

@@ -7,6 +7,8 @@
       DEF_FRAG = 'shader.frag',
       DEF_VERT = 'shader.vert',
 
+      $score = $('#score'),
+
       delayMouse = {
         x: 0,
         y: 0
@@ -23,10 +25,7 @@
         screenHeight : 0
       };
 
-  window.rewards = {
-    merit: 1,
-    demerit: 1,
-  };
+  window.reward = 0;
   window.mouse = mouse;
 
   const fetch = require('whatwg-fetch');
@@ -86,7 +85,7 @@
       } else if (event.keyCode === 40) { //DOWN ARROW
         decreaseMerit();
       } else if (event.keyCode === 80) { //"P" KEY
-        window.rewards.merit = 0;
+        window.reward = 0;
         panicButton();
       }
     });
@@ -303,7 +302,7 @@
   }
 
   function updateScore () {
-    $('#score').innerHTML = window.rewards.merit;
+    $score.innerHTML = window.reward;
   }
 
 
