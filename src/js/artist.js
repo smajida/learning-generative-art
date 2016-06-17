@@ -11,7 +11,7 @@ window.learningUniforms = generateUniforms();
 const ROOT = location.origin.replace('8080','3210');
 const num_inputs = getBrainInputs().length; // 1 time in session/page, 2 mouse coords, 2 page scroll, 1 clicks
 const num_actions = getActions().length; // 5 possible angles agent can turn
-const temporal_window = 0.99; // amount of temporal memory. 0 = agent lives in-the-moment :)
+const temporal_window = 4000; // amount of temporal memory. 0 = agent lives in-the-moment :)
 const network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
 
 const AUTO_PAINT_CYCLES = 4;
@@ -97,7 +97,7 @@ function generateUniforms () {
   let limit = 10;
   let _uniforms = [];
   while ( limit-- ) {
-    _uniforms.push( { name: 'learning'+limit, index: limit, val: 0.5 } );
+    _uniforms.push( { name: 'learning'+limit, index: limit, val: 0.5+((Math.random()-0.5)/10) } );
   }
   console.log(_uniforms);
   return _uniforms;
