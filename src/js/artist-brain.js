@@ -30,6 +30,7 @@ let actions = {
     return messageType;
   },
   forward: function (messageType, inputs) {
+    //console.clear();
     return brain.forward(inputs);
   },
   backward: function (messageType, reward) {
@@ -41,7 +42,7 @@ let actions = {
   },
   getJSONFromBrain: function (messageType, jsondata) {
     let _brain_json = JSON.stringify(brain.value_net.toJSON());
-    console.log(_brain_json.length);
+    //console.log(_brain_json.length);
     return _brain_json;
   }
 }

@@ -29,13 +29,14 @@
   };
   window.mouse = mouse;
 
+  const fetch = require('whatwg-fetch');
+  const Promise = window.Promise || require('es6-promise');
   const glUtils = require('./glUtils');
   const focusUtils = require('./window.focus.util');
+
   const artist = require('./artist');
-  const Promise = window.Promise || require('es6-promise');
   let utils = require('utils');
   let TweenMax = require('gsap');
-  const fetch = window.fetch || require('whatwg-fetch').fetch;
   const ROOT = location.origin.replace('8080','3210');
 
 

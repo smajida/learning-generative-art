@@ -8,7 +8,6 @@ let totalInteractions = 0;
 let timeSinceLastInteraction = timePageLoad;
 window.learningUniforms = generateUniforms();
 
-const fetch = window.fetch || require('whatwg-fetch').fetch;
 const ROOT = location.origin.replace('8080','3210');
 const num_inputs = getBrainInputs().length; // 1 time in session/page, 2 mouse coords, 2 page scroll, 1 clicks
 const num_actions = getActions().length; // 5 possible angles agent can turn
@@ -16,7 +15,7 @@ const temporal_window = 0.99; // amount of temporal memory. 0 = agent lives in-t
 const network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
 
 const AUTO_PAINT_CYCLES = 4;
-const PAINT_TIME = 4500;
+const PAINT_TIME = 10000;
 const ML_STATE_COUNTER = 1;
 
 
@@ -110,7 +109,7 @@ function actionFactory (degree) {
     var p = new Promise(function (resolve) {
       resolver = resolve;
     });
-    TweenMax.to(this, PAINT_TIME/1000, {val: this.val + (degree), onComplete: resolver});
+    TweenMax.to(this, PAINT_TIME/1000, {val: this.val + (degree), onComplete: resolver, ease: Strong.easeInOut });
     return p;
   }
 }
@@ -136,14 +135,14 @@ function getActions () {
     if (DEGREE < 0.1) {
       DEGREE * 10;
     }
-    console.log('change degree', DEGREE);
+    //console.log('change degree', DEGREE);
     return Promise.resolve();
   },
   function () {
     if (DEGREE > 0.0000001) {
       DEGREE / 10;
     }
-    console.log('change degree', DEGREE);
+    //console.log('change degree', DEGREE);
     return Promise.resolve();
   },
   function () {
@@ -157,7 +156,7 @@ function panicFunction () {
   //crazy reset
   window.learningUniforms.forEach(function (currentUniform, index) {
     (function (degree) {
-      TweenMax.to(this, PAINT_TIME/500, {val: degree});
+      TweenMax.to(this, PAINT_TIME/500, {val: degree, ease: Strong.easeInOut });
     }).bind(currentUniform)(currentUniform.val+((Math.random()-0.5)/100));
   });
 
@@ -172,7 +171,7 @@ function panicFunction () {
 }
 
 function loadBrainFromJSON (data) {
-  console.log('Brain Loaded', data);
+  //console.log('Brain Loaded', data);
   if (data.layers) {
     return messageArtistBrain('loadBrainFromJSON', [data]);
   }
@@ -237,7 +236,7 @@ function validateResult() {
       resolve(event.data[0]);
     };
 
-    let pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+    let pixels = new Uint8Array(Math.floor(gl.drawingBufferWidth * gl.drawingBufferHeight * 4));
     gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
     validationWorker.postMessage([pixels]);
   });
@@ -284,11 +283,11 @@ let SaveCounter = ML_STATE_COUNTER;
 function doPainting () {
   return messageArtistBrain('forward', [getBrainInputs()])
     .then(function (messageData) {
-      console.log('fwd', messageData);
+      //console.log('fwd', messageData);
       let action = messageData[1];
       let actions = getActions();
       // action is a number in [0, num_actions) telling index of the action the agent chooses
-      console.log('Action index: ', action);
+      //.log('Action index: ', action);
       nextPaintingStep();
       return actions[action]()
         .then(function () {
@@ -340,7 +339,7 @@ function fetchBrainJSON (callback) {
 }
 
 function doPaintCallback (e) {
-  if (e) console.log(e);
+  //if (e) console.log(e);
   requestAnimationFrame(learnToPaintLoop);
   requestAnimationFrame(artistLearnedFlash);
 }
