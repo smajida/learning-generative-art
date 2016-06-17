@@ -16,7 +16,7 @@ const network_size = num_inputs*temporal_window + num_actions*temporal_window + 
 
 const AUTO_PAINT_CYCLES = 4;
 const PAINT_TIME = 10000;
-const ML_STATE_COUNTER = 1;
+const ML_STATE_COUNTER = 100;
 
 
 let ValidationWorker = require("worker!./validation-worker");
@@ -59,7 +59,7 @@ function $$ (sel) {
 }
 
 
-window.addEventListener('click', function () {
+window.addEventListener('mousedown', function () {
   lastInteraction.x = mouse.x;
   lastInteraction.x = mouse.y;
   totalInteractions++;
@@ -94,7 +94,7 @@ window.addEventListener('panic', function () {
 }, false);
 
 window.addEventListener('blur', function () {
-  window.reward = Math.max(interactTime-100,0);
+  interactTime = Math.max(interactTime-50,0);
 }, false);
 
 
@@ -128,17 +128,6 @@ function getActions () {
     result.push( (actionFactory(DEGREE)).bind(currentUniform) );
     return result;
   }, [
-  // function () {
-  //   console.log('scramble!');
-  //   return Promise.all(window.learningUniforms.map(function (currentUniform, index) {
-  //     var resolver;
-  //     var p = new Promise(function (resolve) {
-  //       resolver = resolve;
-  //     });
-  //     TweenMax.to(currentUniform, PAINT_TIME/1000, {val: currentUniform.val+((Math.random()-0.5)/100), delay: index/500, onComplete: resolver});
-  //     return p;
-  //   }));
-  // },
   function () {
     if (DEGREE < 0.1) {
       DEGREE * 10;
