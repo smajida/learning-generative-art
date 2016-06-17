@@ -94,7 +94,7 @@ window.addEventListener('panic', function () {
 }, false);
 
 window.addEventListener('blur', function () {
-  window.reward = Math.max(window.reward-100,0);
+  window.reward = Math.max(interactTime-100,0);
 }, false);
 
 
