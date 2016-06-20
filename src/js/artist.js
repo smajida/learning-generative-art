@@ -9,24 +9,33 @@ let timeSinceLastInteraction = timePageLoad;
 window.learningUniforms = generateUniforms();
 
 const ROOT = location.origin.replace('8080','3210');
-const num_inputs = getBrainInputs().length; // 1 time in session/page, 2 mouse coords, 2 page scroll, 1 clicks
-const num_actions = getActions().length; // 5 possible angles agent can turn
-const temporal_window = 20; // amount of temporal memory. 0 = agent lives in-the-moment :)
+const num_inputs = getBrainInputs().length;
+
+let DEGREE = 0.01;
+let Actions = getActions();
+
+const num_actions = Actions.length;
+const temporal_window = 20;
 const network_size = num_inputs*temporal_window + num_actions*temporal_window + num_inputs;
 
+console.log(num_actions);
+
 const AUTO_PAINT_CYCLES = 4;
-const PAINT_TIME = 10000;
-const ML_STATE_COUNTER = 100;
+const PAINT_TIME = 1000;
+const ML_STATE_SAVE_COUNTER = 1000;
 
 
-let ValidationWorker = require("worker!./validation-worker");
+let ValidationWorker = require('worker!./validation-worker');
 let validationWorker = new ValidationWorker();
 let utils = require('utils');
 let TweenMax = require('gsap');
 let learnToPaintCycles = AUTO_PAINT_CYCLES;
 let interactTime = 0;
 
-let ArtistBrain = require("worker!./artist-brain");
+
+TweenMax.defaultOverwrite = 'TweenMax';
+
+let ArtistBrain = require('worker!./artist-brain');
 let ArtistBrainWorker = new ArtistBrain();
 ArtistBrainWorker.onmessage = function(event) {
   //console.log('Message in Main', event);
@@ -111,17 +120,25 @@ function generateUniforms () {
   return _uniforms;
 }
 
-function actionFactory (degree) {
+function actionFactory () {
   return function () {
     var resolver;
     var p = new Promise(function (resolve) {
       resolver = resolve;
     });
-    TweenMax.to(this, PAINT_TIME/1000, {val: this.val + (degree), onComplete: resolver, ease: Strong.easeInOut });
+    console.log('tween called');
+    TweenMax.to(this, PAINT_TIME/1000, {
+      val: this.val + (DEGREE),
+      onComplete: function (resolver, uniform) {
+        console.log('tween finished', uniform);
+        resolver();
+      },
+      onCompleteParams: [resolver, this],
+      ease: Strong.easeOut
+    });
     return p;
   }
 }
-var DEGREE = 0.01;
 function getActions () {
   return window.learningUniforms.reduce(function (result, currentUniform, index) {
     result.push( (actionFactory(-DEGREE)).bind(currentUniform) );
@@ -133,18 +150,18 @@ function getActions () {
       DEGREE * 10;
     }
     //console.log('change degree', DEGREE);
-    return Promise.resolve();
+    return Promise.resolve(DEGREE);
   },
   function () {
     if (DEGREE > 0.0000001) {
       DEGREE / 10;
     }
     //console.log('change degree', DEGREE);
-    return Promise.resolve();
+    return Promise.resolve(DEGREE);
   },
   function () {
     //no action
-    return Promise.resolve();
+    return Promise.resolve('');
   }
   ]);
 }
@@ -209,7 +226,7 @@ function getLearningUniformsInputs () {
 function justPaint() {
   var action = messageArtistBrain('forward', [getBrainInputs()]);
 
-  getActions()[action]();
+  Actions[action]();
   setTimeout(function () {
     justPaint();
   }, PAINT_TIME/4);
@@ -258,7 +275,7 @@ function learnToPaintLoop () {
   requestAnimationFrame(learnToPaint);
 }
 
-let LoadCounter = ML_STATE_COUNTER;
+let LoadCounter = ML_STATE_SAVE_COUNTER;
 function learnToPaint () {
   if ( utils.getUrlVars('learningmodeoff') ) {
     return;
@@ -268,27 +285,26 @@ function learnToPaint () {
     doPainting();
     return;
   }
-  LoadCounter = ML_STATE_COUNTER;
+  LoadCounter = ML_STATE_SAVE_COUNTER;
   fetchBrainJSON(function (data) {
     if (data && !data[1]) {
-      console.error("Error", data);
+      console.error('Error', data);
     }
     doPainting();
   });
 }
 
-let SaveCounter = ML_STATE_COUNTER;
+let SaveCounter = ML_STATE_SAVE_COUNTER;
 function doPainting () {
   return messageArtistBrain('forward', [getBrainInputs()])
     .then(function (messageData) {
-      //console.log('fwd', messageData);
       let action = messageData[1];
-      let actions = getActions();
+      //console.log('action', action);
       // action is a number in [0, num_actions) telling index of the action the agent chooses
-      //.log('Action index: ', action);
       nextPaintingStep();
-      return actions[action]()
-        .then(function () {
+      return Actions[action](action)
+        .then(function (out) {
+          //console.log('Action: ', action, out);
           var reward = calculateReward();
           messageArtistBrain('backward', [reward])  // <-- learning magic happens here
             .catch(function (e) {
@@ -304,7 +320,7 @@ function nextPaintingStep () {
       doPaintCallback();
       return Promise.resolve();
     }
-    SaveCounter = ML_STATE_COUNTER;
+    SaveCounter = ML_STATE_SAVE_COUNTER;
     return messageArtistBrain('getJSONFromBrain')
       .then(function (data) {
         return postToMemory(data[1]);
@@ -359,7 +375,7 @@ function INIT () {
     .then(function () {
       fetchBrainJSON(function (data) {
         if (data && !data[1]) {
-          console.error("Error", data);
+          console.error('Error', data);
         }
         getStarted();
       });
