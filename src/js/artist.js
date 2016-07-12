@@ -3,7 +3,7 @@
 const _ = require('lodash');
 
 let timePageLoad = Date.now();
-let lastInteraction = {x: 0, y: 0};
+let ctaInteraction = {x: 0, y: 0};
 let totalInteractions = 0;
 let timeSinceLastInteraction = timePageLoad;
 window.learningUniforms = generateUniforms();
@@ -22,7 +22,7 @@ console.log(num_actions);
 
 const AUTO_PAINT_CYCLES = 4;
 const PAINT_TIME = 1000;
-const ML_STATE_SAVE_COUNTER = 1000;
+const ML_STATE_SAVE_COUNTER = 20;
 
 
 let ValidationWorker = require('worker!./validation-worker');
@@ -33,7 +33,7 @@ let learnToPaintCycles = AUTO_PAINT_CYCLES;
 let interactTime = 0;
 
 
-TweenMax.defaultOverwrite = 'TweenMax';
+//TweenMax.defaultOverwrite = 'none';
 
 let ArtistBrain = require('worker!./artist-brain');
 let ArtistBrainWorker = new ArtistBrain();
@@ -68,11 +68,18 @@ function $$ (sel) {
 }
 
 
-window.addEventListener('mousedown', function () {
-  lastInteraction.x = mouse.x;
-  lastInteraction.x = mouse.y;
-  totalInteractions++;
-  timeSinceLastInteraction = Date.now()-timeSinceLastInteraction;
+window.addEventListener('click', function (e) {
+  e.preventDefault();
+  console.log(e.target.nodeName);
+  if ( e.target.nodeName == 'A' ) {
+    ctaInteraction.x = mouse.x;
+    ctaInteraction.x = mouse.y;
+    totalInteractions++;
+    if (e.target.id == 'main-cta') {
+      totalInteractions+=4;
+    }
+    timeSinceLastInteraction = Date.now()-timeSinceLastInteraction;
+  }
 }, false);
 
 function incrementInteractTime () {
@@ -114,7 +121,7 @@ function generateUniforms () {
   let limit = 10;
   let _uniforms = [];
   while ( limit-- ) {
-    _uniforms.push( { name: 'learning'+limit, index: limit, val: 0.5+((Math.random()-0.5)/10) } );
+    _uniforms.push( { name: 'learning'+limit, index: limit, val: 0.5+((Math.random()-0.5)/2) } );
   }
   console.log(_uniforms);
   return _uniforms;
@@ -134,7 +141,7 @@ function actionFactory () {
         resolver();
       },
       onCompleteParams: [resolver, this],
-      ease: Strong.easeOut
+      ease: Linear.easeNone
     });
     return p;
   }
@@ -212,8 +219,8 @@ function getBrainInputs () {
     window.scrollY,
     mouse.x,
     mouse.y,
-    lastInteraction.x,
-    lastInteraction.y,
+    ctaInteraction.x,
+    ctaInteraction.y,
     DEGREE,
   ].concat(getLearningUniformsInputs());
 }
@@ -301,11 +308,11 @@ function doPainting () {
       let action = messageData[1];
       //console.log('action', action);
       // action is a number in [0, num_actions) telling index of the action the agent chooses
-      nextPaintingStep();
       return Actions[action](action)
         .then(function (out) {
           //console.log('Action: ', action, out);
           var reward = calculateReward();
+          nextPaintingStep();
           messageArtistBrain('backward', [reward])  // <-- learning magic happens here
             .catch(function (e) {
               console.error('Error', e);

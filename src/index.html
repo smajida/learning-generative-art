@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%= htmlWebpackPlugin.options.title %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css">
     <style>
       body {
         background-color: #eee;
@@ -21,17 +22,47 @@
         box-sizing: border-box;
         color: #333;
         z-index: 100;
-        margin-top: 80vh;
-        margin-bottom: 120vh;
+        margin-top: 20vh;
+        margin-bottom: 20vh;
+        text-align: center;
       }
       .messages h2 {
         font-size: 20px;
         display: block;
         font-weight: 100;
       }
+      .messages a {
+        color: white;
+        text-decoration: none;
+        background-color: gray;
+        padding: 1em 2em;
+        display: inline-block;
+        margin: 0.2em;
+        line-height: 1;
+        transition: 200ms all;
+      }
+      .messages section,
+      .messages div {
+        clear: both;
+        overflow: hidden;
+      }
+      .messages ul,
+      .messages li {
+        display: block;
+        margin: 0;
+        padding: 0;
+      }
       .messages strong {
         text-transform: uppercase;
         font-weight: 900;
+      }
+      .messages a#main-cta {
+        background-color: darkred;
+        font-size: 300%;
+      }
+      .messages a:hover,
+      .messages a#main-cta:hover {
+        background-color: #eb1767;
       }
       #glcanvas {
         height: 100vh;
@@ -49,17 +80,18 @@
         top: 0;
         right: 0;
         padding: 20px;
-        z-index: 100;
+        z-index: 200;
       }
       #learned {
         font-size: 12;
-        background-color: white;
+        background-color: rgba(0,0,0,0.7);
         bottom: 10px;
         right: 10px;
         width: 40px;
         height: 40px;
         border-radius: 100px;
-        position: absolute;
+        position: fixed;
+        z-index: 200;
         transform: scale(0.0001);
       }
     </style>
@@ -67,11 +99,9 @@
   <body>
     <canvas id="glcanvas"></canvas>
     <div id="scoreWrap">Artist Reward: <span id="score">0</span></div>
+    <div id="learned"></div>
     <section id="messages" class="messages">
-      <div id="learned"></div>
-      <h2 id="intro">Hi! I'm a Deep "Q" Learning Neural Network that is learing how to paint. </h2>
-      <p>Tap your <strong>up</strong> Arrow Key to give me a reward me if you like what I drew. Tap the <strong>down</strong> Key to let me know if you don&rsquo;t (I need positive and negative feedback to learn). Tap the "<strong>P</strong>" Key if you want to see something totally different. Click to close this message.</p>
-      <p><small>PS. I don't place nice with Retina Screens.</small></p>
+      <section class="section--pink home-header"><div class="banner-carousel owl-carousel owl-theme"><a href="http://smashingboxes.com/work/employus"><div class="item" style="background-image: url('http://smashingboxes.com/media/W1siZiIsIjIwMTUvMDQvMjkvMTgvMDkvMzUvNDQ0L2NvdmVyLmpwZyJdXQ');"><div class="project-description"><h2>Employ/Us/</h2><p class="byline">CROWD-SOURCED RECRUITING PUTS THE JOB HUNT IN YOUR HANDS</p></div></div></a><a href="http://smashingboxes.com/work/farm-bureau"><div class="item" style="background-image: url('http://smashingboxes.com/media/W1siZiIsIjIwMTUvMDQvMjMvMTMvMzAvMzAvODk2L2hlYWRlci5qcGciXV0');"><div class="project-description"><h2>Farm Bureau</h2><p class="byline">IMPROVING THE CUSTOMER EXPERIENCE WITH MOBILE</p></div></div></a><a href="http://smashingboxes.com/work/fhi-contraceptive-technology-innovation-exchange"><div class="item" style="background-image: url('http://smashingboxes.com/media/W1siZiIsIjIwMTUvMDYvMTgvMTQvMzAvNDgvNjU3L2hlYWRlci5qcGciXV0');"><div class="project-description"><h2>FHI 360</h2><p class="byline">TAKING CONTRACEPTIVE R&amp;D GLOBAL</p></div></div></a><a href="http://smashingboxes.com/work/glen-raven"><div class="item" style="background-image: url('http://smashingboxes.com/media/W1siZiIsIjIwMTQvMDcvMjgvMTIvNDUvMjcvNDgyL2dsZW5fcmF2ZW5faGVhZGVyLmpwZyJdXQ');"><div class="project-description"><h2>Glen Raven</h2><p class="byline">AN ENTERPRISE SOLUTION THAT TRANSFORMED A COMPANY CULTURE</p></div></div></a></div></section><section class="section--white services"><div class="row main"><div class="columns intro"><h2><span class="fade1">We </span><span class="fade2">Smash</span><span class="fade3"> Th</span><span class="fade4">ing</span><span class="fade5">s</span></h2></div><p class="centered">We design products for web, mobile and connected devices.</p></div><div class="hr"></div><div class="row"><div class="large-13 columns service-list small-centered"><div class="list-border"><span>Design</span><ul><li>Product UI</li><li>Product UX</li><li>Brand Identity</li><li>Visual Design</li><li>Systems Design</li><li>Prototyping</li></ul></div><div class="list-border"><span>Development</span><ul><li>Native iOS</li><li>Native Android</li><li>Web Development</li><li>API Development</li><li>Connected Devices</li><li>Quality Assurance</li></ul></div><div class="list-border"><span>Strategy</span><ul><li>Research & Insights</li><li>Product Strategy</li><li>Service Design</li><li>Analytics</li><li>Digital Strategy</li><li>SEO</li></ul></div></div></div></section><section><div class="carousel js-slider" id="home-carousel"><a href="http://smashingboxes.com/blog/why-everyone-needs-a-lab"><div class="slide"><div class="slide-image-wrapper"><div class="overlay"></div><div class="background" style="background-image: url(http://smashingboxes.com/media/W1siZiIsIjIwMTYvMDYvMjkvMTAvMDcvMjQvNDc5L2ZpbGUiXV0);"></div></div><div class="slide-container"><div class="large-7 small-16 columns small-centered"><h2 class="blog-title">Why Everyone Needs a Lab</h2></div></div></div></a><a href="http://smashingboxes.com/blog/how-we-growth-hacked-our-20-percent-time-project-crnt"><div class="slide"><div class="slide-image-wrapper"><div class="overlay"></div><div class="background" style="background-image: url(http://smashingboxes.com/media/W1siZiIsIjIwMTYvMDYvMTAvMTEvNDQvMzUvODQ0L2ZpbGUiXV0);"></div></div><div class="slide-container"><div class="large-7 small-16 columns small-centered"><h2 class="blog-title">How We Growth Hacked Our “20% Time” Project, CRNT</h2></div></div></div></a><a href="http://smashingboxes.com/blog/introducing-fraqture-a-platform-for-uniting-tech-and-art"><div class="slide"><div class="slide-image-wrapper"><div class="overlay"></div><div class="background" style="background-image: url(http://smashingboxes.com/media/W1siZiIsIjIwMTYvMDUvMTkvMTEvNDgvMzQvOTM1L2ZpbGUiXV0);"></div></div><div class="slide-container"><div class="large-7 small-16 columns small-centered"><h2 class="blog-title">Introducing Fraqture: A Platform For Uniting Tech and Art</h2></div></div></div></a><a href="http://smashingboxes.com/blog/service-design-learn-by-doing"><div class="slide"><div class="slide-image-wrapper"><div class="overlay"></div><div class="background" style="background-image: url(http://smashingboxes.com/media/W1siZiIsIjIwMTYvMDUvMTgvMDkvNTEvNDgvOTg0L2ZpbGUiXV0);"></div></div><div class="slide-container"><div class="large-7 small-16 columns small-centered"><h2 class="blog-title">Service Design: Learn By Doing</h2></div></div></div></a><a href="http://smashingboxes.com/blog/image-upload-in-phoenix"><div class="slide"><div class="slide-image-wrapper"><div class="overlay"></div><div class="background" style="background-image: url(http://smashingboxes.com/media/W1siZiIsIjIwMTYvMDUvMTYvMTUvMDkvMzMvNTQxL2ZpbGUiXV0);"></div></div><div class="slide-container"><div class="large-7 small-16 columns small-centered"><h2 class="blog-title">Image Upload in Phoenix</h2></div></div></div></a><a href="http://smashingboxes.com/blog/the-entrepreneurial-spirit-can-change-your-company-and-our-world-for-the-better"><div class="slide"><div class="slide-image-wrapper"><div class="overlay"></div><div class="background" style="background-image: url(http://smashingboxes.com/media/W1siZiIsIjIwMTYvMDUvMDIvMTEvNTgvMzAvNTUyL2ZpbGUiXV0);"></div></div><div class="slide-container"><div class="large-7 small-16 columns small-centered"><h2 class="blog-title">The entrepreneurial spirit can change your company and our world for the better</h2></div></div></div></a></div></section><section class="section--grey hiring"><div class="row centered"><h3>Let's Partner</h3><a class="button button-partner" id="main-cta" href="http://smashingboxes.com/contact">Work With Us</a></div></section><section class="section--white section--offices clearfix"><div class="office office--neworleans"><div class="office__bg"></div><div class="office__inner"><h1 class="office__header">NEW ORLEANS</h1><a class="office__link" data-location="New Orleans" href="http://smashingboxes.com//goo.gl/maps/VmqU9etNpwQ2" target="_blank"><ul class="office__contact office__contact--no-margin"><li>935 Gravier Street</li><li>Suite 1650</li><li>New Orleans, LA 70112</li></ul><ul class="office__contact"><li>&nbsp;</li><li><a class="office__link" href="tel:+18557627446">1.855.762.7446</a></li></ul></a></div></div><div class="office office--durham"><div class="office__bg"></div><div class="office__inner"><h1 class="office__header">Durham</h1><a class="office__link" data-location="Durham" href="http://smashingboxes.com//goo.gl/maps/rtrjgotKyCx" target="_blank"><ul class="office__contact office__contact--no-margin"><li>Diamond View III</li><li>359 Blackwell Street</li><li>Suite 240</li><li>Durham, NC 27701</li></ul></a><ul class="office__contact"><li>&nbsp;</li><li><a class="office__link" href="tel:+18557627446">1.855.762.7446</a></li></ul></div></div><div class="office office--montreal"><div class="office__bg"></div><div class="office__inner"><h1 class="office__header">Montreal</h1><a class="office__link" data-location="Montreal" href="http://smashingboxes.com//goo.gl/maps/hyCcgYEGi6G2" target="_blank"><ul class="office__contact office__contact--no-margin"><li>4284 Rue de La Roche</li><li>Montreal, QC H2J 3H9</li></ul><ul class="office__contact"><li>&nbsp;</li><li><a class="office__link" href="tel:+18557627446">1.855.762.7446</a></li></ul></a></div></div></section><footer><div class="row centered"><div class="logo-alt"><a href="http://smashingboxes.com/"><i class="icon-sb-mark"></i></a><h5>Next Matters Most</h5></div><a class="button contact-btn" href="http://smashingboxes.com/contact">Contact Us</a><ul class="footer-social"><li><a href="https://twitter.com/smashingboxes" target="_blank"><i class="icon-sb-twitter"></i><span>Twitter</span></a></li><li><a href="http://www.linkedin.com/company/smashing-boxes" target="_blank"><i class="icon-sb-linkedin"></i><span>Linkedin</span></a></li><li><a href="http://dribbble.com/SmashingBoxes" target="_blank"><i class="icon-sb-dribbble"></i><span>Dribbble</span></a></li><li><a href="http://instagram.com/SmashingBoxes" target="_blank"><i class="icon-sb-instagram"></i><span>Instagram</span></a></li></ul></div></footer>
     </section>
   </body>
 </html>

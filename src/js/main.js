@@ -18,6 +18,7 @@
         y: 0
       },
       parameters = {
+        seed: Math.random()*Date.now(),
         start_time : Date.now(),
         time : 0,
         scrolly : 0,
@@ -88,10 +89,6 @@
         window.reward = 0;
         panicButton();
       }
-    });
-
-    $('#messages').addEventListener('click', function () {
-      TweenMax.to('#messages', 0.5, {bottom: '-600px'})
     });
   }
 
@@ -286,6 +283,7 @@
     gl.uniformMatrix4fv(loc, false, mat);
 
     gl.uniform1f( gl.getUniformLocation( currentProgram, 'time' ), parameters.time );
+    gl.uniform1f( gl.getUniformLocation( currentProgram, 'seed' ), parameters.seed );
     gl.uniform1f( gl.getUniformLocation( currentProgram, 'scrolly' ), parameters.scrolly );
     gl.uniform2f( gl.getUniformLocation( currentProgram, 'resolution' ), parameters.screenWidth, parameters.screenHeight );
     gl.uniform2f( gl.getUniformLocation( currentProgram, 'mouse' ), mouse.x/parameters.screenWidth, (parameters.screenHeight-mouse.y)/parameters.screenHeight );
