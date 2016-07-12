@@ -56,13 +56,13 @@ float flatten (vec4 outcolor) {
 
 void main( )
 {
-    float modifyScroll = sin(learning0-0.5);
-    float modifyTimeEffect = sin(learning1*2.);
-    float modifyMouseX = sin(learning2-0.5);
-    float modifyMouseY = sin(learning3-0.5);
+    float modifyScroll = learning0-0.5;
+    float modifyTimeEffect = learning1*200.;
+    float modifyMouseX = sin(learning2);
+    float modifyMouseY = sin(learning3);
     float modifyOpacity = sin(learning4);
-    float modifyXColor = sin(learning5-0.5);
-    float modifyYColor = sin(learning6-0.5);
+    float modifyXColor = sin(learning5);
+    float modifyYColor = sin(learning6);
     //float learning7; //used above
     //float learning8; //used above
     //float learning9; //used above
@@ -70,10 +70,10 @@ void main( )
     vec2 uv = (gl_FragCoord.xy / resolution.xy);
     vec2 uvb = uv-0.5;
 
-    float scrollMod = sin(scrolly)*modifyScroll;
+    float scrollMod = sin(scrolly)/(modifyScroll*10000.);
     float delayMouseXMod = (delayMouse.x-0.5)*modifyMouseX*2.;
     float delayMouseYMod = (delayMouse.y-0.5)*modifyMouseY*2.;
-    float mtime = ((sin(time+seed))/2.)+modifyTimeEffect;
+    float mtime = snoise( vec2( ((sin(time+seed))/2.)/(modifyTimeEffect) ) );
 
     uv.x += sin(uvb.x * uvb.x * (cos(mtime) * sin(mtime)) - scrollMod );
 

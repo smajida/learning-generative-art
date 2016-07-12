@@ -70,13 +70,15 @@ function $$ (sel) {
 
 window.addEventListener('click', function (e) {
   e.preventDefault();
-  console.log(e.target.nodeName);
   if ( e.target.nodeName == 'A' ) {
     ctaInteraction.x = mouse.x;
     ctaInteraction.x = mouse.y;
     totalInteractions++;
     if (e.target.id == 'main-cta') {
       totalInteractions+=4;
+      setTimeout(() => {
+        window.location.reload();
+      }, 5000);
     }
     timeSinceLastInteraction = Date.now()-timeSinceLastInteraction;
   }
