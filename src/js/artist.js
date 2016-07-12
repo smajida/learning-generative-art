@@ -133,11 +133,11 @@ function actionFactory () {
     var p = new Promise(function (resolve) {
       resolver = resolve;
     });
-    console.log('tween called');
+    //console.log('tween called');
     TweenMax.to(this, PAINT_TIME/1000, {
       val: this.val + (DEGREE),
       onComplete: function (resolver, uniform) {
-        console.log('tween finished', uniform);
+        //console.log('tween finished', uniform);
         resolver();
       },
       onCompleteParams: [resolver, this],
@@ -267,7 +267,6 @@ function calculateReward () {
   // seconds on page * 1, interactions * 15, scroll dist total * 10, num pages * 20, clicks contact * 200
   if ( window.isInVisibleState ) {
     window.reward = Math.floor((Date.now()-timePageLoad)/(100*1000)) + Math.floor(interactTime) + (totalInteractions*15);
-    console.log(Math.floor((Date.now()-timePageLoad)/(100*1000)), Math.floor(interactTime), (totalInteractions*15))
   }
   return window.reward;
 }

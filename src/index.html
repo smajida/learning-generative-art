@@ -28,7 +28,12 @@
         margin-bottom: 20vh;
         text-align: center;
       }
-      .messages h2 {
+      .messages h1,
+      .messages h2,
+      .messages h3,
+      .messages h4,
+      .messages h5,
+      .messages h6 {
         font-size: 20px;
         display: block;
         font-weight: 100;
@@ -47,12 +52,18 @@
       .messages div {
         clear: both;
         overflow: hidden;
+        padding: 0.2em;
       }
-      .messages ul,
-      .messages li {
+      .messages ul {
         display: block;
         margin: 0;
         padding: 0;
+      }
+      .messages li {
+        display: inline-block;
+        padding: 0.2em;
+        margin: 0.1em;
+        border: 1px solid #dfdfdf;
       }
       .messages strong {
         text-transform: uppercase;

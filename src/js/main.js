@@ -1,6 +1,6 @@
 (function (window, document) {
 
-  var canvas, gl, buffer,
+  let canvas, gl, buffer,
       vertex_shader, fragment_shader,
       currentProgram, vertex_position,
 
@@ -35,9 +35,9 @@
   const focusUtils = require('./window.focus.util');
 
   const artist = require('./artist');
+  const ROOT = location.origin.replace('8080','3210');
   let utils = require('utils');
   let TweenMax = require('gsap');
-  const ROOT = location.origin.replace('8080','3210');
 
 
   init();
@@ -60,22 +60,57 @@
     // THINK ABOUT A LARGER VERTEX BUFFER
     buffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
-    gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( [ -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0 ] ), gl.STATIC_DRAW );
+
+    // Make a giant square to display fragment shader on
+    gl.bufferData( gl.ARRAY_BUFFER, new Float32Array([
+        -1.0, -1.0, 1.0,
+        -1.0, -1.0, 1.0,
+         1.0, -1.0, 1.0,
+         1.0, -1.0, 1.0
+      ]), gl.STATIC_DRAW );
 
     // Create GL Program
     let fragShaderName = (getParameterByName('frag') || DEF_FRAG) + '.glsl';
     let vertShaderName = (getParameterByName('vert') || DEF_VERT) + '.glsl';
 
     currentProgram = createProgram( `${fragShaderName}`, `${vertShaderName}` );
+
+    shuffleMessages();
     onWindowResize();
     addEventListeners();
-
     animate();
+  }
+
+  function shuffleMessages() {
+    let shuffle = function (arr) {
+      let counter = arr.length;
+      while (counter > 0) {
+        let index = Math.floor(Math.random() * counter);
+        counter--;
+        let temp = arr[counter];
+        arr[counter] = arr[index];
+        arr[index] = temp;
+      }
+      return arr;
+    }
+    let indexShuffle = [];
+    let messages = $('#messages');
+    let sections = $$('#messages > section');
+    sections.forEach((ele, i) => {
+      indexShuffle.push(i);
+    });
+    indexShuffle = shuffle(indexShuffle);
+    indexShuffle.forEach((index, ii) => {
+      messages.appendChild(sections[index]);
+    });
   }
 
   function addEventListeners () {
     window.addEventListener( 'resize', onWindowResize, false );
     window.addEventListener( 'mousemove', onMouseMove, false );
+    $('body').addEventListener( 'mouseleave', function (e) {
+      decreaseMerit();
+    }, false );
 
     window.addEventListener('keydown', function(event){
       console.log('keypressed', event.keyCode);
@@ -126,16 +161,12 @@
     window.dispatchEvent(new Event('panic'));
   }
   function increaseMerit () {
-    if (rewards.merit < 0) rewards.merit = 0;
-    rewards.merit+=10;
+    window.reward+=10;
     window.dispatchEvent(new Event('learn'));
   }
   function decreaseMerit (key) {
-    if ( rewards.merit > 0 ) {
-      rewards.merit=0;
-    } else {
-      rewards.merit-=5;
-    }
+    window.reward-=50;
+    if (window.reward<=0) window.reward = 0;
     window.dispatchEvent(new Event('learn'));
   }
   function onMouseMove (event) {
@@ -144,8 +175,8 @@
 
   function getParameterByName(name, url) {
     if (!url) url = window.location.href;
-    url = url.toLowerCase(); // This is just to avoid case sensitiveness
-    name = name.replace(/[\[\]]/g, "\\$&").toLowerCase();// This is just to avoid case sensitiveness for query parameter name
+    url = url.toLowerCase();
+    name = name.replace(/[\[\]]/g, "\\$&").toLowerCase();
     var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
         results = regex.exec(url);
     if (!results) return null;

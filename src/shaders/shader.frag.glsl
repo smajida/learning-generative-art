@@ -34,7 +34,7 @@ vec4 stripes(vec2 _uv, float modifyXColor, float modifyYColor)
 {
     vec4 stripeout = vec4( 235./255., 23./255., 103./255., 1. );
 
-    if (sin(mod(_uv.x, 1.0)) > learning8 && sin(mod(_uv.x, 1.0)) < learning8+(learning9/2.)) {
+    if (sin(mod(_uv.x, 1.0)) > learning8 && sin(mod(_uv.x, 1.0)) < sin(learning8)+(sin(learning9)/2.)) {
         stripeout = vec4( 182./255., 62./255., 134./255., 1. );
     }
 
@@ -42,7 +42,7 @@ vec4 stripes(vec2 _uv, float modifyXColor, float modifyYColor)
 
     stripeout = stripeout+(_uv.y * modifyYColor);
     stripeout = stripeout+(_uv.x * modifyXColor);
-    stripeout = stripeout-vec4( 0., 0., 0., (cos(_uv.y))/(2.*learning7));
+    stripeout = stripeout-vec4( 0., 0., 0., (cos(_uv.y))/(2.*sin(learning7)));
     return stripeout;
 }
 
@@ -56,13 +56,13 @@ float flatten (vec4 outcolor) {
 
 void main( )
 {
-    float modifyScroll = learning0-0.5;
-    float modifyTimeEffect = learning1*2.;
-    float modifyMouseX = learning2-0.5;
-    float modifyMouseY = learning3-0.5;
-    float modifyOpacity = learning4;
-    float modifyXColor = learning5-0.5;
-    float modifyYColor = learning6-0.5;
+    float modifyScroll = sin(learning0-0.5);
+    float modifyTimeEffect = sin(learning1*2.);
+    float modifyMouseX = sin(learning2-0.5);
+    float modifyMouseY = sin(learning3-0.5);
+    float modifyOpacity = sin(learning4);
+    float modifyXColor = sin(learning5-0.5);
+    float modifyYColor = sin(learning6-0.5);
     //float learning7; //used above
     //float learning8; //used above
     //float learning9; //used above
