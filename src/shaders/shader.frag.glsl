@@ -51,7 +51,7 @@ float snoise(vec2 co){
 }
 
 float flatten (vec4 outcolor) {
-    return (outcolor.r+outcolor.g+outcolor.b)/4.;
+    return (outcolor.r + outcolor.g + outcolor.b)/4.;
 }
 
 void main( )
@@ -67,19 +67,19 @@ void main( )
     //float learning8; //used above
     //float learning9; //used above
 
-    vec2 uv = (gl_FragCoord.xy / resolution.xy);
+    vec2 uv = (gl_FragCoord.xy / resolution.yy);
     vec2 uvb = uv-0.5;
 
-    float scrollMod = sin(scrolly)/(modifyScroll*10000.);
+    float scrollMod = sin(scrolly/resolution.y)/(modifyScroll*10000.);
     float delayMouseXMod = (delayMouse.x-0.5)*modifyMouseX*2.;
     float delayMouseYMod = (delayMouse.y-0.5)*modifyMouseY*2.;
     float mtime = snoise( vec2( ((sin(time+seed))/2.)/(modifyTimeEffect) ) );
 
-    uv.x += sin(uvb.x * uvb.x * (cos(mtime) * sin(mtime)) - scrollMod );
+    uv.x += sin(uvb.x * uvb.x * (cos(mtime) * sin(mtime))) / max(scrollMod, 0.00000001);
 
-    uv.x += sin(uv.y*(5.0*delayMouseYMod));
-    uv.y += sin(uv.x*(5.0*delayMouseXMod));
-    vec4 outcolor = stripes(uv, modifyXColor, modifyYColor)+vec4(0.,0.,0.,mod(mtime+uv.x,1.0)*0.99);
+    uv.x += sin(uv.y*(delayMouseYMod)) - learning8;
+    uv.y += sin(uv.x*(delayMouseXMod)) - learning8;
+    vec4 outcolor = stripes(uv, modifyXColor, modifyYColor)+vec4(0.,0.,0.,mod(uv.x,1.0)*0.99);
 
     //outcolor = outcolor-vec4(0.,0.,0.,0.1);
     gl_FragColor = outcolor;

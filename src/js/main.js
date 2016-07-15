@@ -1,4 +1,5 @@
-(function (window, document) {
+;import 'babel-polyfill';
+;(function (window, document) {
 
   let canvas, gl, buffer,
       vertex_shader, fragment_shader,
@@ -30,7 +31,6 @@
   window.mouse = mouse;
 
   const fetch = require('whatwg-fetch');
-  const Promise = window.Promise || require('es6-promise');
   const glUtils = require('./glUtils');
   const focusUtils = require('./window.focus.util');
 
@@ -95,7 +95,7 @@
     }
     let indexShuffle = [];
     let messages = $('#messages');
-    let sections = $$('#messages > section');
+    let sections = $$('#messages > *');
     sections.forEach((ele, i) => {
       indexShuffle.push(i);
     });
@@ -108,6 +108,7 @@
   function addEventListeners () {
     window.addEventListener( 'resize', onWindowResize, false );
     window.addEventListener( 'mousemove', onMouseMove, false );
+    window.addEventListener( 'main-cta-click', shuffleMessages, false );
     $('body').addEventListener( 'mouseleave', function (e) {
       decreaseMerit();
     }, false );
@@ -171,6 +172,7 @@
   }
   function onMouseMove (event) {
     mouse = { x: event.pageX, y: event.pageY };
+    window.mouse = mouse;
   }
 
   function getParameterByName(name, url) {
@@ -315,7 +317,7 @@
 
     gl.uniform1f( gl.getUniformLocation( currentProgram, 'time' ), parameters.time );
     gl.uniform1f( gl.getUniformLocation( currentProgram, 'seed' ), parameters.seed );
-    gl.uniform1f( gl.getUniformLocation( currentProgram, 'scrolly' ), parameters.scrolly );
+    gl.uniform1f( gl.getUniformLocation( currentProgram, 'scrolly' ), (parameters.scrolly || 0)/parameters.screenHeight );
     gl.uniform2f( gl.getUniformLocation( currentProgram, 'resolution' ), parameters.screenWidth, parameters.screenHeight );
     gl.uniform2f( gl.getUniformLocation( currentProgram, 'mouse' ), mouse.x/parameters.screenWidth, (parameters.screenHeight-mouse.y)/parameters.screenHeight );
     gl.uniform2f( gl.getUniformLocation( currentProgram, 'delayMouse' ), delayMouse.x/parameters.screenWidth, (parameters.screenHeight-delayMouse.y)/parameters.screenHeight );

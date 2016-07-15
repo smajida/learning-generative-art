@@ -1,17 +1,20 @@
 ;(function (window, document) {
 
 const _ = require('lodash');
+const utils = require('utils');
+const $ = utils.$;
+const $$ = utils.$$;
 
 let timePageLoad = Date.now();
+let timeSinceLastInteraction = timePageLoad;
 let ctaInteraction = {x: 0, y: 0};
 let totalInteractions = 0;
-let timeSinceLastInteraction = timePageLoad;
+let DEGREE = 0.01;
+
 window.learningUniforms = generateUniforms();
 
 const ROOT = location.origin.replace('8080','3210');
 const num_inputs = getBrainInputs().length;
-
-let DEGREE = 0.01;
 let Actions = getActions();
 
 const num_actions = Actions.length;
@@ -27,7 +30,7 @@ const ML_STATE_SAVE_COUNTER = 20;
 
 let ValidationWorker = require('worker!./validation-worker');
 let validationWorker = new ValidationWorker();
-let utils = require('utils');
+
 let TweenMax = require('gsap');
 let learnToPaintCycles = AUTO_PAINT_CYCLES;
 let interactTime = 0;
@@ -59,26 +62,15 @@ function messageArtistBrain (messageType, data) {
   });
 }
 
-
-function $ (sel) {
-  return document.querySelector(sel);
-}
-function $$ (sel) {
-  return [].slice.call(document.querySelectorAll(sel));
-}
-
-
 window.addEventListener('click', function (e) {
   e.preventDefault();
-  if ( e.target.nodeName == 'A' ) {
+  if ( e.target.nodeName == 'A' || e.target.nodeName == 'BUTTON' ) {
     ctaInteraction.x = mouse.x;
     ctaInteraction.x = mouse.y;
     totalInteractions++;
     if (e.target.id == 'main-cta') {
       totalInteractions+=4;
-      setTimeout(() => {
-        window.location.reload();
-      }, 5000);
+      window.dispatchEvent(new Event('main-cta-click'));
     }
     timeSinceLastInteraction = Date.now()-timeSinceLastInteraction;
   }
@@ -92,9 +84,11 @@ let interactCounterHandle = _.debounce(incrementInteractTime, 10);
 window.addEventListener('mousemove', interactCounterHandle, false);
 window.addEventListener('scroll', interactCounterHandle, false);
 
-$$('a, button').forEach(function (ele) {
-  ele.addEventListener('mouseover', interactCounterHandle, false);
-});
+window.addEventListener('mouseover', function (e) {
+  if (e.target.nodeName == 'A' || e.target.nodeName == 'BUTTON') {
+    interactCounterHandle(e);
+  }
+}, false);
 
 window.addEventListener('learn', function () {
   console.log('learn!');
@@ -103,7 +97,6 @@ window.addEventListener('learn', function () {
 
 window.addEventListener('panic', function () {
   console.log('panic!');
-
   panicFunction()
     .then(function () {
       window.reward = 0;
@@ -214,17 +207,23 @@ function parseJSON(response) {
   return response.json();
 }
 
-function getBrainInputs () {
-  return [
+
+function getBrainInputs() {
+  let pageSize = utils.getBodyDimensions();
+  let pageScroll = utils.getPageScroll();
+  let cta = utils.getCTAPostition();
+  let inputs = [
     Date.now()-timePageLoad,
-    window.scrollX,
-    window.scrollY,
-    mouse.x,
-    mouse.y,
-    ctaInteraction.x,
-    ctaInteraction.y,
+    pageScroll.scrollX / pageSize.width,
+    pageScroll.scrollY / pageSize.height,
+    mouse.x / pageSize.width,
+    mouse.y / pageSize.height,
+    cta.x / pageSize.width,
+    cta.y / pageSize.width,
     DEGREE,
   ].concat(getLearningUniformsInputs());
+  //console.log(inputs);
+  return inputs;
 }
 function getLearningUniformsInputs () {
   return window.learningUniforms.map(function (uni) {
@@ -239,14 +238,6 @@ function justPaint() {
   setTimeout(function () {
     justPaint();
   }, PAINT_TIME/4);
-}
-
-function getKeys(obj) {
-  let keys = [];
-  for (let key in obj) {
-    keys.push(key);
-  }
-  return keys;
 }
 
 function validateResult() {
