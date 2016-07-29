@@ -6,7 +6,7 @@ precision mediump float;
 
 uniform float time;
 uniform float scrolly;
-uniform vec2 mouse;
+uniform vec2 ctaDistance;
 uniform vec2 delayMouse;
 uniform vec2 resolution;
 
@@ -36,6 +36,8 @@ vec4 stripes(vec2 _uv, float modifyXColor, float modifyYColor)
 
     if (sin(mod(_uv.x, 1.0)) > learning8 && sin(mod(_uv.x, 1.0)) < sin(learning8)+(sin(learning9)/2.)) {
         stripeout = vec4( 182./255., 62./255., 134./255., 1. );
+    } else if (sin(mod(_uv.x, 1.0)) > learning9 && sin(mod(_uv.x, 1.0)) < sin(learning9)+(sin(learning8)/1.2)) {
+        stripeout = stripeout+vec4( 1., 1., 1., 0.1 );
     }
 
     stripeout = stripeout+vec4( (_uv.y) );
@@ -47,7 +49,7 @@ vec4 stripes(vec2 _uv, float modifyXColor, float modifyYColor)
 }
 
 float snoise(vec2 co){
-    return (fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453))/1000.;
+    return (fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453))*0.00000001;
 }
 
 float flatten (vec4 outcolor) {
@@ -56,8 +58,8 @@ float flatten (vec4 outcolor) {
 
 void main( )
 {
-    float modifyScroll = learning0-0.5;
-    float modifyTimeEffect = learning1*200.;
+    float modifyScroll = learning0;
+    float modifyTimeEffect = learning1;
     float modifyMouseX = sin(learning2);
     float modifyMouseY = sin(learning3);
     float modifyOpacity = sin(learning4);
@@ -67,15 +69,19 @@ void main( )
     //float learning8; //used above
     //float learning9; //used above
 
+    float scrollMod = sin(scrolly*modifyScroll);
+    float delayMouseXMod = (delayMouse.x)*modifyMouseX;
+    float delayMouseYMod = (delayMouse.y)*modifyMouseY;
+    float mtime = sin(time+seed)*modifyTimeEffect;
+
     vec2 uv = (gl_FragCoord.xy / resolution.yy);
-    vec2 uvb = uv-0.5;
+    uv.x = uv.x+learning7;
+    uv.y = uv.y+scrolly;
 
-    float scrollMod = sin(scrolly/resolution.y)/(modifyScroll*10000.);
-    float delayMouseXMod = (delayMouse.x-0.5)*modifyMouseX*2.;
-    float delayMouseYMod = (delayMouse.y-0.5)*modifyMouseY*2.;
-    float mtime = snoise( vec2( ((sin(time+seed))/2.)/(modifyTimeEffect) ) );
+    vec2 uvb = vec2( sin(uv.x-0.5+delayMouseXMod), sin(uv.y-0.5+delayMouseYMod) );
 
-    uv.x += sin(uvb.x * uvb.x * (cos(mtime) * sin(mtime))) / max(scrollMod, 0.00000001);
+
+    uv.x += (uvb.x * uvb.x) + ((cos(mtime)) * scrollMod);
 
     uv.x += sin(uv.y*(delayMouseYMod)) - learning8;
     uv.y += sin(uv.x*(delayMouseXMod)) - learning8;

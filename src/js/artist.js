@@ -218,11 +218,15 @@ function getBrainInputs() {
     pageScroll.scrollY / pageSize.height,
     mouse.x / pageSize.width,
     mouse.y / pageSize.height,
-    cta.x / pageSize.width,
-    cta.y / pageSize.width,
+    cta.x - mouse.x / pageSize.width,
+    cta.y - mouse.y / pageSize.height,
     DEGREE,
   ].concat(getLearningUniformsInputs());
-  //console.log(inputs);
+
+  console.log({
+    ctax: cta.x / pageSize.width - mouse.x / pageSize.width,
+    ctay: cta.y/ pageSize.height - mouse.y / pageSize.height
+  });
   return inputs;
 }
 function getLearningUniformsInputs () {

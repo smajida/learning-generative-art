@@ -4,7 +4,7 @@
   "private": true,
   "description": "Generative machine learning artwork. Maybe.",
   "scripts": {
-    "build": "NODE_ENV=production webpack -p --progress --colors",
+    "build": "npm install && NODE_ENV=production webpack -p --progress --colors",
     "serve": "node ./server/server.js",
     "watch": "webpack --progress --colors --watch",
     "devserver": "webpack-dev-server --content-base dist/ --colors --hot --inline",

@@ -19,7 +19,7 @@
         y: 0
       },
       parameters = {
-        seed: Math.random()*Date.now(),
+        seed: Math.random(),
         start_time : Date.now(),
         time : 0,
         scrolly : 0,
@@ -317,9 +317,9 @@
 
     gl.uniform1f( gl.getUniformLocation( currentProgram, 'time' ), parameters.time );
     gl.uniform1f( gl.getUniformLocation( currentProgram, 'seed' ), parameters.seed );
-    gl.uniform1f( gl.getUniformLocation( currentProgram, 'scrolly' ), (parameters.scrolly || 0)/parameters.screenHeight );
+    gl.uniform1f( gl.getUniformLocation( currentProgram, 'scrolly' ), ( (parameters.scrolly || 0)/parameters.screenHeight ) - 0.5 );
     gl.uniform2f( gl.getUniformLocation( currentProgram, 'resolution' ), parameters.screenWidth, parameters.screenHeight );
-    gl.uniform2f( gl.getUniformLocation( currentProgram, 'mouse' ), mouse.x/parameters.screenWidth, (parameters.screenHeight-mouse.y)/parameters.screenHeight );
+    gl.uniform2f( gl.getUniformLocation( currentProgram, 'ctaDistance' ), mouse.x/parameters.screenWidth, (parameters.screenHeight-mouse.y)/parameters.screenHeight );
     gl.uniform2f( gl.getUniformLocation( currentProgram, 'delayMouse' ), delayMouse.x/parameters.screenWidth, (parameters.screenHeight-delayMouse.y)/parameters.screenHeight );
 
 
