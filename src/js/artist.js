@@ -194,20 +194,6 @@ function loadBrainFromJSON (data) {
   return;
 }
 
-function checkStatus(response) {
-  if (response.status >= 200 && response.status < 300) {
-    return response;
-  } else {
-    let error = new Error(response.statusText);
-    error.response = response;
-    throw error;
-  }
-}
-function parseJSON(response) {
-  return response.json();
-}
-
-
 function getBrainInputs() {
   let pageSize = utils.getBodyDimensions();
   let pageScroll = utils.getPageScroll();
@@ -218,15 +204,11 @@ function getBrainInputs() {
     pageScroll.scrollY / pageSize.height,
     mouse.x / pageSize.width,
     mouse.y / pageSize.height,
-    cta.x - mouse.x / pageSize.width,
-    cta.y - mouse.y / pageSize.height,
+    (cta.x / pageSize.width) - (mouse.x / pageSize.width),
+    (cta.y / pageSize.height) - (mouse.y / pageSize.height),
     DEGREE,
   ].concat(getLearningUniformsInputs());
 
-  console.log({
-    ctax: cta.x / pageSize.width - mouse.x / pageSize.width,
-    ctay: cta.y/ pageSize.height - mouse.y / pageSize.height
-  });
   return inputs;
 }
 function getLearningUniformsInputs () {
@@ -339,8 +321,8 @@ function postToMemory (value_net_json) {
       },
       body: value_net_json
     })
-    .then(checkStatus)
-    .then(parseJSON)
+    .then(utils.checkStatus)
+    .then(utils.parseJSON)
     .then(loadBrainFromJSON)
     .then(doPaintCallback)
     .catch(doPaintCallback);
@@ -348,8 +330,8 @@ function postToMemory (value_net_json) {
 
 function fetchBrainJSON (callback) {
   return fetch(ROOT+'/brain/brain.json')
-    .then(checkStatus)
-    .then(parseJSON)
+    .then(utils.checkStatus)
+    .then(utils.parseJSON)
     .then(loadBrainFromJSON)
     .then(callback)
     .catch(callback);

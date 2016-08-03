@@ -1,6 +1,6 @@
 'use strict';
 
-let deepqlearn = require('deepqlearn');
+let deepqlearn = require('./deepqlearn');
 let brain;
 let actions = {
   setup: function (messageType, network_size, num_actions, num_inputs, temporal_window) {
