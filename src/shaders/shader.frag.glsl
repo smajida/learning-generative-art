@@ -36,8 +36,8 @@ vec4 stripes(vec2 _uv, float modifyXColor, float modifyYColor)
 
     if (sin(mod(_uv.x, 1.0)) > learning8 && sin(mod(_uv.x, 1.0)) < sin(learning8)+(sin(learning9)/2.)) {
         stripeout = vec4( 182./255., 62./255., 134./255., 1. );
-    } else if (sin(_uv.x) > learning9 && sin(_uv.x) < sin(learning9)+(sin(learning8)/1.2)) {
-        stripeout = stripeout+vec4( 1., 1., 1., 0.2 );
+    } else if (sin(_uv.x) > sin(learning9) && sin(_uv.x) < sin(learning9)+(sin(learning8)/1.2)) {
+        stripeout = stripeout+vec4( 1., 1., 1., 1. );
     }
 
     stripeout = stripeout+vec4( (_uv.y) );
@@ -85,7 +85,7 @@ void main( )
 
     uv.x += sin(uv.y*(delayMouseYMod)) - learning8;
     uv.y += sin(uv.x*(delayMouseXMod)) - learning8;
-    vec4 outcolor = stripes(uv, modifyXColor, modifyYColor)+vec4(0.,0.,0.,1.);
+    vec4 outcolor = stripes(uv, modifyXColor, modifyYColor)+vec4(0.,0.,0.,0.2);
 
     //outcolor = outcolor-vec4(0.,0.,0.,0.1);
     gl_FragColor = outcolor;

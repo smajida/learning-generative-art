@@ -47,6 +47,11 @@ class ArtistRenderer {
       pageWidth: 1
     };
 
+    this.helpers = {
+      scrollDelta: 0,
+      scrollDistance: 0
+    }
+
     canvas = document.getElementById('glcanvas' );
     mouse.x = window.innerWidth/2;
     mouse.y = window.innerHeight/2;
@@ -116,19 +121,32 @@ class ArtistRenderer {
     gl.viewport( 0, 0, canvas.width, canvas.height );
   }
   onMouseMove (event) {
+    let scroll = utils.getPageScroll();
     if (typeof event.pageX !== 'undefined') {
+      this.helpers.scrollDistance = scroll.scrollY;
+      this.helpers.scrollDelta = scroll.scrollY - this.helpers.scrollDistance;
       mouse = { x: event.pageX, y: event.pageY };
     } else {
-      debugger;
+      this.helpers.scrollDelta = scroll.scrollY - this.helpers.scrollDistance;
+      mouse.y = mouse.y + this.helpers.scrollDelta;
+      this.helpers.scrollDistance = scroll.scrollY;
     }
+    console.log(mouse);
     window.mouse = mouse;
   }
   animate() {
     requestAnimationFrame(this.animate.bind(this));
+    //this.processScrollDelta();
+    this.processDelayMouse();
+    this.render();
+  }
+  processScrollDelta() {
+    this.helpers.scrollDistance = utils.getPageScroll().scrollY;
+    console.log((mouse.y));
+  }
+  processDelayMouse() {
     delayMouse.x += (mouse.x-delayMouse.x)/16;
     delayMouse.y += (mouse.y-delayMouse.y)/16;
-    //console.log(delayMouse, mouse);
-    this.render();
   }
   saveImage() {
     let imgData = canvas.toDataURL();
@@ -263,8 +281,6 @@ class ArtistRenderer {
     ];
     mat[5] = canvas.height/canvas.width;
     gl.uniformMatrix4fv(loc, false, mat);
-
-    console.log(mouse.y);
 
     gl.uniform1f(
       gl.getUniformLocation(currentProgram, 'time'),
