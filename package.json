@@ -8,7 +8,8 @@
     "serve": "node ./server/server.js",
     "watch": "webpack --progress --colors --watch",
     "devserver": "webpack-dev-server --content-base dist/ --colors --hot --inline",
-    "dev": "./bin/dev"
+    "dev": "./bin/dev",
+    "deploy": "./bin/deploy"
   },
   "author": "Keegan Brown for Smashing Boxes",
   "repository": {
