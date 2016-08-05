@@ -23,9 +23,10 @@ class Utils {
   }
   static getCTAPostition() {
     let ele = Utils.$('#main-cta');
+    let pos = ele.getBoundingClientRect();
     return {
-      x: (ele.offsetLeft || 0),
-      y: (ele.offsetTop || 0)
+      x: (pos.left + (ele.offsetWidth/2)),
+      y: (pos.top + (ele.offsetHeight/2))
     }
   }
   static getKeys(obj) {

@@ -40,7 +40,7 @@ vec4 stripes(vec2 _uv, float modifyXColor, float modifyYColor)
         stripeout = stripeout+vec4( 1., 1., 1., 1. );
     }
 
-    stripeout = stripeout+vec4( (_uv.y) );
+    stripeout = stripeout+vec4( learning8, learning7, learning9, 0.9 );
 
     stripeout = stripeout+(_uv.y * modifyYColor);
     stripeout = stripeout+(_uv.x * modifyXColor);
@@ -70,8 +70,8 @@ void main( )
     //float learning9; //used raw
 
     float scrollMod = sin(scrolly*modifyScroll);
-    float delayMouseXMod = (delayMouse.x)*modifyMouseX;
-    float delayMouseYMod = (delayMouse.y)*modifyMouseY;
+    float delayMouseXMod = sin(ctaDistance.x)-modifyMouseX;
+    float delayMouseYMod = sin(ctaDistance.y)-modifyMouseY;
     float mtime = sin(time+seed)*modifyTimeEffect;
 
     vec2 uv = (gl_FragCoord.xy / resolution.yy);
@@ -85,7 +85,7 @@ void main( )
 
     uv.x += sin(uv.y*(delayMouseYMod)) - learning8;
     uv.y += sin(uv.x*(delayMouseXMod)) - learning8;
-    vec4 outcolor = stripes(uv, modifyXColor, modifyYColor)+vec4(0.,0.,0.,0.2);
+    vec4 outcolor = stripes(uv, modifyXColor, modifyYColor)+vec4(0.,0.,0.,0.4*modifyOpacity);
 
     //outcolor = outcolor-vec4(0.,0.,0.,0.1);
     gl_FragColor = outcolor;

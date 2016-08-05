@@ -13,6 +13,10 @@ let mouse = {
   x: 0,
   y: 0
 };
+let ctaDistance = {
+  x: 0,
+  y: 0
+};
 
 
 window.reward = 0;
@@ -83,6 +87,7 @@ class ArtistRenderer {
     this.animate();
   }
   addEventListeners () {
+    window.addEventListener('load', this.onWindowResize.bind(this), false);
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
     window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
     window.addEventListener('scroll', this.onMouseMove.bind(this), false);
@@ -131,18 +136,20 @@ class ArtistRenderer {
       mouse.y = mouse.y + this.helpers.scrollDelta;
       this.helpers.scrollDistance = scroll.scrollY;
     }
-    console.log(mouse);
+    //console.log(mouse);
     window.mouse = mouse;
   }
   animate() {
     requestAnimationFrame(this.animate.bind(this));
-    //this.processScrollDelta();
     this.processDelayMouse();
+    this.processCTADistance();
     this.render();
   }
-  processScrollDelta() {
-    this.helpers.scrollDistance = utils.getPageScroll().scrollY;
-    console.log((mouse.y));
+  processCTADistance() {
+    let ctaPos = utils.getCTAPostition();
+    ctaDistance.x = ctaPos.x - delayMouse.x;
+    ctaDistance.y = ctaPos.y - delayMouse.y;
+    //console.log(ctaDistance);
   }
   processDelayMouse() {
     delayMouse.x += (mouse.x-delayMouse.x)/16;
@@ -300,7 +307,9 @@ class ArtistRenderer {
 
     gl.uniform2f(
       gl.getUniformLocation(currentProgram, 'ctaDistance'),
-      mouse.x/parameters.screenWidth, (parameters.screenHeight-mouse.y)/parameters.screenHeight );
+      ctaDistance.x/this.parameters.pageWidth, ctaDistance.y/this.parameters.pageHeight );
+
+    console.log(ctaDistance.x/this.parameters.pageWidth, ctaDistance.y/this.parameters.pageHeight);
 
     gl.uniform2f(
       gl.getUniformLocation(currentProgram, 'delayMouse'),
@@ -320,7 +329,6 @@ class ArtistRenderer {
   updateScore () {
     $score.innerHTML = window.reward;
   }
-
 }
 
 

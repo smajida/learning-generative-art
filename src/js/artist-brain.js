@@ -2,8 +2,8 @@
 
 let deepqlearn = require('./deepqlearn');
 let brain;
-let actions = {
-  setup: function (messageType, network_size, num_actions, num_inputs, temporal_window) {
+class ArtistBrain {
+  static setup(messageType, network_size, num_actions, num_inputs, temporal_window) {
     let layer_defs = [];
     layer_defs.push({type:'input', out_sx:1, out_sy:1, out_depth:network_size});
     layer_defs.push({type:'fc', num_neurons: 25, activation:'relu'});
@@ -28,19 +28,19 @@ let actions = {
     console.log('setup!', num_inputs, num_actions, opt);
     brain = new deepqlearn.Brain(num_inputs, num_actions, opt); // woohoo
     return messageType;
-  },
-  forward: function (messageType, inputs) {
+  }
+  static forward(messageType, inputs) {
     //console.clear();
     return brain.forward(inputs);
-  },
-  backward: function (messageType, reward) {
+  }
+  static backward(messageType, reward) {
     return brain.backward(reward); // <-- learning magic happens here
-  },
-  loadBrainFromJSON: function (messageType, jsondata) {
+  }
+  static loadBrainFromJSON(messageType, jsondata) {
     brain.value_net.fromJSON(jsondata);
     return true;
-  },
-  getJSONFromBrain: function (messageType, jsondata) {
+  }
+  static getJSONFromBrain(messageType, jsondata) {
     let _brain_json = JSON.stringify(brain.value_net.toJSON());
     //console.log(_brain_json.length);
     return _brain_json;
@@ -49,9 +49,9 @@ let actions = {
 
 onmessage = function(e) {
   let messageType = e.data[0];
-  if ( actions[messageType] ) {
+  if ( ArtistBrain[messageType] ) {
     //console.log('Message in worker', e.data, actions[messageType]);
-    let response = actions[messageType](messageType, e.data[1], e.data[2], e.data[3], e.data[4]);
+    let response = ArtistBrain[messageType](messageType, e.data[1], e.data[2], e.data[3], e.data[4]);
     postMessage([messageType, response]);
   }
 }
